@@ -1,0 +1,52 @@
+{
+  "name": "recipe-matcher-backend",
+  "version": "1.0.0",
+  "main": "bin/recipe-matcher.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "cdk": "cdk",
+    "deploy": "cdk deploy",
+    "destroy": "cdk destroy",
+    "synth": "cdk synth",
+    "diff": "cdk diff",
+    "test": "jest",
+    "import-recipes": "ts-node src/scripts/spoonacular-importer.ts",
+    "clear-recipes": "ts-node src/scripts/clear-recipes.ts"
+  },
+  "keywords": [
+    "aws",
+    "cdk",
+    "lambda",
+    "dynamodb",
+    "recipe",
+    "matching"
+  ],
+  "author": "",
+  "license": "ISC",
+  "description": "Backend infrastructure for Recipe Matcher app",
+  "dependencies": {
+    "@aws-cdk/aws-lambda-nodejs": "^1.203.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.896.0",
+    "@aws-sdk/client-dynamodb": "^3.896.0",
+    "@aws-sdk/client-eventbridge": "^3.899.0",
+    "@aws-sdk/client-s3": "^3.896.0",
+    "@aws-sdk/client-sns": "^3.899.0",
+    "@aws-sdk/lib-dynamodb": "^3.896.0",
+    "aws-cdk-lib": "^2.218.0",
+    "axios": "^1.12.2",
+    "bcryptjs": "^3.0.2",
+    "constructs": "^10.4.2",
+    "jsonwebtoken": "^9.0.2",
+    "source-map-support": "^0.5.21"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.152",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.6.0",
+    "esbuild": "^0.25.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
