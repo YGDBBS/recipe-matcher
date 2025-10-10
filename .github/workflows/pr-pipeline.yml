@@ -1,0 +1,273 @@
+name: PR Pipeline
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # Frontend Tests
+  frontend-tests:
+    runs-on: ubuntu-latest
+    name: Frontend Tests
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: ./frontend
+        run: npm run lint
+
+      - name: Run TypeScript type checking
+        working-directory: ./frontend
+        run: npx tsc --noEmit
+
+      - name: Run unit tests
+        working-directory: ./frontend
+        run: npm run test:run
+        continue-on-error: true
+
+      - name: Build application
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Check bundle size
+        working-directory: ./frontend
+        run: |
+          echo "Checking bundle size..."
+          if [ -d "dist" ]; then
+            echo "Bundle size:"
+            du -sh dist/
+            echo "Largest files:"
+            find dist -type f -exec du -h {} + | sort -rh | head -10
+          fi
+
+  # Backend Tests
+  backend-tests:
+    runs-on: ubuntu-latest
+    name: Backend Tests
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: ./backend
+        run: npm run lint
+
+      - name: Run TypeScript type checking
+        working-directory: ./backend
+        run: npx tsc --noEmit
+
+      - name: Run unit tests
+        working-directory: ./backend
+        run: npm run test:ci
+        continue-on-error: true
+
+      - name: Build application
+        working-directory: ./backend
+        run: npm run build
+
+      - name: CDK Synth (validate infrastructure)
+        working-directory: ./backend
+        run: npm run synth
+        env:
+          AWS_DEFAULT_REGION: eu-west-1
+
+  # Integration Tests
+  integration-tests:
+    runs-on: ubuntu-latest
+    name: Integration Tests
+    needs: [frontend-tests, backend-tests]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Build backend
+        working-directory: ./backend
+        run: npm run build
+
+      - name: Run integration tests
+        run: |
+          echo "Running integration tests..."
+          # Add your integration test commands here
+          # Example: npm run test:integration
+        continue-on-error: true
+
+  # Security Scan
+  security-scan:
+    runs-on: ubuntu-latest
+    name: Security Scan
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run npm audit (frontend)
+        working-directory: ./frontend
+        run: npm audit --audit-level=moderate
+
+      - name: Run npm audit (backend)
+        working-directory: ./backend
+        run: npm audit --audit-level=moderate
+
+  # Performance Tests
+  performance-tests:
+    runs-on: ubuntu-latest
+    name: Performance Tests
+    needs: [frontend-tests, backend-tests]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          configPath: './.lighthouserc.json'
+        continue-on-error: true
+
+      - name: Check bundle size impact
+        working-directory: ./frontend
+        run: |
+          echo "Checking bundle size impact..."
+          if [ -d "dist" ]; then
+            echo "Current bundle size:"
+            du -sh dist/
+            echo "Largest files:"
+            find dist -type f -exec du -h {} + | sort -rh | head -10
+          fi
+
+  # Code Coverage
+  code-coverage:
+    runs-on: ubuntu-latest
+    name: Code Coverage
+    needs: [frontend-tests, backend-tests]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run tests with coverage (frontend)
+        working-directory: ./frontend
+        run: npm run test:coverage
+        continue-on-error: true
+
+      - name: Run tests with coverage (backend)
+        working-directory: ./backend
+        run: npm run test:coverage
+        continue-on-error: true
+
+  # Summary
+  pr-summary:
+    runs-on: ubuntu-latest
+    name: PR Summary
+    needs: [frontend-tests, backend-tests, integration-tests, security-scan, performance-tests, code-coverage]
+    if: always()
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate PR summary
+        run: |
+          echo "## 🚀 PR Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend Tests | ${{ needs.frontend-tests.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend Tests | ${{ needs.backend-tests.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | ${{ needs.integration-tests.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Scan | ${{ needs.security-scan.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Performance Tests | ${{ needs.performance-tests.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Coverage | ${{ needs.code-coverage.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend**: ${{ needs.frontend-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend**: ${{ needs.backend-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Integration**: ${{ needs.integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Security**: ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Performance**: ${{ needs.performance-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Coverage**: ${{ needs.code-coverage.result }}" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,49 @@
+version: 2
+updates:
+  # Frontend dependencies
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "adamhorscraft"
+    assignees:
+      - "adamhorscraft"
+    commit-message:
+      prefix: "chore(frontend)"
+      include: "scope"
+
+  # Backend dependencies
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "adamhorscraft"
+    assignees:
+      - "adamhorscraft"
+    commit-message:
+      prefix: "chore(backend)"
+      include: "scope"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "adamhorscraft"
+    assignees:
+      - "adamhorscraft"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"

@@ -1,0 +1,78 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run ESLint on frontend
+        working-directory: ./frontend
+        run: npm run lint
+
+      - name: Run ESLint on backend
+        working-directory: ./backend
+        run: npm run lint
+
+      - name: Run TypeScript type checking (frontend)
+        working-directory: ./frontend
+        run: npx tsc --noEmit
+
+      - name: Run TypeScript type checking (backend)
+        working-directory: ./backend
+        run: npx tsc --noEmit
+
+      - name: Check for unused dependencies (frontend)
+        working-directory: ./frontend
+        run: npx depcheck
+
+      - name: Check for unused dependencies (backend)
+        working-directory: ./backend
+        run: npx depcheck
+
+      - name: Check bundle size (frontend)
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Analyze bundle size
+        working-directory: ./frontend
+        run: npx bundlesize
+        continue-on-error: true
+
+      - name: Check for TODO/FIXME comments
+        run: |
+          echo "Checking for TODO/FIXME comments..."
+          if grep -r "TODO\|FIXME" frontend/src backend/src --exclude-dir=node_modules; then
+            echo "Found TODO/FIXME comments. Consider addressing them."
+            exit 1
+          fi
+
+      - name: Check for console.log statements
+        run: |
+          echo "Checking for console.log statements..."
+          if grep -r "console\.log" frontend/src backend/src --exclude-dir=node_modules; then
+            echo "Found console.log statements. Consider removing them for production."
+            exit 1
+          fi

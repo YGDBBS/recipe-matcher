@@ -148,6 +148,68 @@ export function EventProvider({ children }: { children: ReactNode }) {
   const reconnectTimeoutRef = useRef<number | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
+  // Notification management
+  const addNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+    const newNotification: Notification = {
+      ...notification,
+      id: Date.now().toString(),
+      timestamp: new Date().toISOString(),
+      read: false,
+    };
+    
+    dispatch({ type: 'NOTIFICATION_ADD', payload: newNotification });
+    
+    // Auto-remove notification after 4 seconds
+    setTimeout(() => {
+      dispatch({ type: 'NOTIFICATION_REMOVE', payload: newNotification.id });
+    }, 4000);
+  };
+
+  // Handle incoming events from WebSocket
+  const handleEvent = (event: FrontendEvent) => {
+    switch (event.type) {
+      case 'recipe_matched':
+        addNotification({
+          type: 'success',
+          title: 'New Recipe Match!',
+          message: `Found a recipe with ${event.data.matchPercentage}% ingredient match`,
+          data: event.data,
+        });
+        break;
+      
+      case 'recipe_shared':
+        addNotification({
+          type: 'info',
+          title: 'Recipe Shared',
+          message: 'A recipe has been shared with you',
+          data: event.data,
+        });
+        break;
+      
+      case 'ingredients_updated':
+        addNotification({
+          type: 'info',
+          title: 'Ingredients Updated',
+          message: 'Your ingredient list has been updated',
+          data: event.data,
+        });
+        break;
+      
+      case 'user_registered':
+        addNotification({
+          type: 'success',
+          title: 'Welcome!',
+          message: `Welcome to Recipe Matcher, ${event.data.username}!`,
+          data: event.data,
+        });
+        break;
+      
+      default:
+        // Unknown event type
+        break;
+    }
+  };
+
   // WebSocket connection logic
   const connect = () => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -218,7 +280,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
       attempts++;
       const delay = Math.pow(2, attempts) * 1000; // Exponential backoff
 
-      reconnectTimeoutRef.current = setTimeout(() => {
+      reconnectTimeoutRef.current = window.setTimeout(() => {
         connect();
       }, delay);
     };
@@ -238,68 +300,6 @@ export function EventProvider({ children }: { children: ReactNode }) {
     }
     
     dispatch({ type: 'CONNECTION_CLOSE' });
-  };
-
-  // Handle incoming events from WebSocket
-  const handleEvent = (event: FrontendEvent) => {
-
-    switch (event.type) {
-      case 'recipe_matched':
-        addNotification({
-          type: 'success',
-          title: 'New Recipe Match!',
-          message: `Found a recipe with ${event.data.matchPercentage}% ingredient match`,
-          data: event.data,
-        });
-        break;
-      
-      case 'recipe_shared':
-        addNotification({
-          type: 'info',
-          title: 'Recipe Shared',
-          message: 'A recipe has been shared with you',
-          data: event.data,
-        });
-        break;
-      
-      case 'ingredients_updated':
-        addNotification({
-          type: 'info',
-          title: 'Ingredients Updated',
-          message: 'Your ingredient list has been updated',
-          data: event.data,
-        });
-        break;
-      
-      case 'user_registered':
-        addNotification({
-          type: 'success',
-          title: 'Welcome!',
-          message: `Welcome to Recipe Matcher, ${event.data.username}!`,
-          data: event.data,
-        });
-        break;
-      
-      default:
-        // Unknown event type
-    }
-  };
-
-  // Notification management
-  const addNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
-    const newNotification: Notification = {
-      ...notification,
-      id: Date.now().toString(),
-      timestamp: new Date().toISOString(),
-      read: false,
-    };
-    
-    dispatch({ type: 'NOTIFICATION_ADD', payload: newNotification });
-    
-    // Auto-remove notification after 4 seconds
-    setTimeout(() => {
-      dispatch({ type: 'NOTIFICATION_REMOVE', payload: newNotification.id });
-    }, 4000);
   };
 
   const markNotificationAsRead = (id: string) => {
