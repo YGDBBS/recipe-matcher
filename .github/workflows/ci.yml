@@ -37,11 +37,11 @@ jobs:
         run: npm run build
 
       - name: Install dependencies (CDK)
-        working-directory: ./infra
+        working-directory: ./backend
         run: npm ci
 
       - name: Synth CDK stack
-        working-directory: ./infra
+        working-directory: ./backend
         run: npx cdk synth
 
   deploy:
@@ -59,7 +59,7 @@ jobs:
           node-version: 20
 
       - name: Install dependencies (CDK)
-        working-directory: ./infra
+        working-directory: ./backend
         run: npm ci
 
       - name: Configure AWS credentials
@@ -70,5 +70,5 @@ jobs:
           aws-region: eu-west-1
 
       - name: Deploy CDK stack
-        working-directory: ./infra
+        working-directory: ./backend
         run: npx cdk deploy --require-approval never
