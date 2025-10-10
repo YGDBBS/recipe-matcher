@@ -45,7 +45,7 @@
     "source-map-support": "^0.5.21"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.152",
+    "@types/aws-lambda": "^8.10.155",
     "@types/bcryptjs": "^2.4.6",
     "@types/jest": "^29.5.12",
     "@types/jsonwebtoken": "^9.0.10",
