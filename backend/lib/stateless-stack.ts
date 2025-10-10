@@ -3,6 +3,8 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
+import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as sns from 'aws-cdk-lib/aws-sns';
@@ -25,6 +27,37 @@ export class StatelessStack extends cdk.Stack {
       versioned: true,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
+    });
+
+    // S3 Bucket for React frontend hosting
+    const frontendBucket = new s3.Bucket(this, 'FrontendBucket', {
+      bucketName: `recipe-matcher-frontend-${this.account}-${this.region}`,
+      websiteIndexDocument: 'index.html',
+      websiteErrorDocument: 'index.html', // SPA routing
+      publicReadAccess: false, // CloudFront will handle access
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+    });
+
+    // CloudFront distribution for React frontend
+    const frontendDistribution = new cloudfront.Distribution(this, 'FrontendDistribution', {
+      defaultBehavior: {
+        origin: new origins.S3StaticWebsiteOrigin(frontendBucket),
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+      },
+      errorResponses: [
+        {
+          httpStatus: 404,
+          responseHttpStatus: 200,
+          responsePagePath: '/index.html',
+        },
+        {
+          httpStatus: 403,
+          responseHttpStatus: 200,
+          responsePagePath: '/index.html',
+        },
+      ],
     });
 
     // Reference DynamoDB tables from stateful stack
@@ -384,6 +417,21 @@ export class StatelessStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'RecipeImagesBucketName', {
       value: recipeImagesBucket.bucketName,
       description: 'S3 Bucket for recipe images',
+    });
+
+    new cdk.CfnOutput(this, 'FrontendBucketName', {
+      value: frontendBucket.bucketName,
+      description: 'S3 Bucket for React frontend',
+    });
+
+    new cdk.CfnOutput(this, 'FrontendDistributionId', {
+      value: frontendDistribution.distributionId,
+      description: 'CloudFront Distribution ID for React frontend',
+    });
+
+    new cdk.CfnOutput(this, 'FrontendUrl', {
+      value: `https://${frontendDistribution.distributionDomainName}`,
+      description: 'Frontend URL',
     });
 
     new cdk.CfnOutput(this, 'EventBusName', {
