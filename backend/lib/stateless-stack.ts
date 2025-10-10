@@ -121,7 +121,7 @@ export class StatelessStack extends cdk.Stack {
     const authLambda = new NodejsFunction(this, 'AuthLambda', {
       ...commonLambdaProps,
       functionName: 'recipe-matcher-auth',
-      entry: 'src/lambda-functions/auth.ts',
+      entry: 'src/lambda/auth.ts',
       handler: 'handler',
     });
 
@@ -129,7 +129,7 @@ export class StatelessStack extends cdk.Stack {
     const recipesLambda = new NodejsFunction(this, 'RecipesLambda', {
       ...commonLambdaProps,
       functionName: 'recipe-matcher-recipes',
-      entry: 'src/lambda-functions/recipes.ts',
+      entry: 'src/lambda/recipes.ts',
       handler: 'handler',
     });
 
@@ -137,7 +137,7 @@ export class StatelessStack extends cdk.Stack {
     const ingredientsLambda = new NodejsFunction(this, 'IngredientsLambda', {
       ...commonLambdaProps,
       functionName: 'recipe-matcher-ingredients',
-      entry: 'src/lambda-functions/ingredients.ts',
+      entry: 'src/lambda/ingredients.ts',
       handler: 'handler',
     });
 
@@ -145,7 +145,7 @@ export class StatelessStack extends cdk.Stack {
     const matchingLambda = new NodejsFunction(this, 'MatchingLambda', {
       ...commonLambdaProps,
       functionName: 'recipe-matcher-matching',
-      entry: 'src/lambda-functions/matching.ts',
+      entry: 'src/lambda/matching.ts',
       handler: 'handler',
     });
 
@@ -153,7 +153,7 @@ export class StatelessStack extends cdk.Stack {
     const eventHandlerLambda = new NodejsFunction(this, 'EventHandlerLambda', {
       ...commonLambdaProps,
       functionName: 'recipe-matcher-event-handler',
-      entry: 'src/lambda-functions/event-handler.ts',
+      entry: 'src/lambda/event-handler.ts',
       handler: 'handler',
       timeout: cdk.Duration.minutes(5),
     });
@@ -161,7 +161,7 @@ export class StatelessStack extends cdk.Stack {
     const notificationHandlerLambda = new NodejsFunction(this, 'NotificationHandlerLambda', {
       ...commonLambdaProps,
       functionName: 'recipe-matcher-notification-handler',
-      entry: 'src/lambda-functions/notification-handler.ts',
+      entry: 'src/lambda/notification-handler.ts',
       handler: 'handler',
     });
 
@@ -169,7 +169,7 @@ export class StatelessStack extends cdk.Stack {
     const connectLambda = new NodejsFunction(this, 'WebSocketConnectLambda', {
       ...commonLambdaProps,
       functionName: 'recipe-matcher-websocket-connect',
-      entry: 'src/lambda-functions/websocket-connect.ts',
+      entry: 'src/lambda/websocket-connect.ts',
       handler: 'handler',
       environment: {
         ...commonLambdaProps.environment,
@@ -180,7 +180,7 @@ export class StatelessStack extends cdk.Stack {
     const disconnectLambda = new NodejsFunction(this, 'WebSocketDisconnectLambda', {
       ...commonLambdaProps,
       functionName: 'recipe-matcher-websocket-disconnect',
-      entry: 'src/lambda-functions/websocket-disconnect.ts',
+      entry: 'src/lambda/websocket-disconnect.ts',
       handler: 'handler',
       environment: {
         ...commonLambdaProps.environment,
@@ -191,7 +191,7 @@ export class StatelessStack extends cdk.Stack {
     const defaultLambda = new NodejsFunction(this, 'WebSocketDefaultLambda', {
       ...commonLambdaProps,
       functionName: 'recipe-matcher-websocket-default',
-      entry: 'src/lambda-functions/websocket-default.ts',
+      entry: 'src/lambda/websocket-default.ts',
       handler: 'handler',
       environment: {
         ...commonLambdaProps.environment,
@@ -202,7 +202,7 @@ export class StatelessStack extends cdk.Stack {
     const websocketEventHandlerLambda = new NodejsFunction(this, 'WebSocketEventHandlerLambda', {
       ...commonLambdaProps,
       functionName: 'recipe-matcher-websocket-event-handler',
-      entry: 'src/lambda-functions/websocket-event-handler.ts',
+      entry: 'src/lambda/websocket-event-handler.ts',
       handler: 'handler',
       environment: {
         ...commonLambdaProps.environment,
