@@ -71,4 +71,4 @@ jobs:
 
       - name: Deploy CDK stack
         working-directory: ./backend
-        run: npx cdk deploy --require-approval never
+        run: npx cdk deploy --all --require-approval never
