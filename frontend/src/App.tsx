@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Box, AppBar, Toolbar, Typography, Container, Button, CircularProgress } from '@mui/material';
@@ -13,7 +13,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { EventProvider, useEvents } from './context/EventContext';
 import IngredientInput from './components/IngredientInput';
 import RecipeResults from './components/RecipeResults';
-import { RecipeProvider } from './context/RecipeContext';
+import { RecipeProvider, useRecipe } from './context/RecipeContext';
 
 const theme = createTheme({
   palette: {
@@ -70,7 +70,8 @@ const theme = createTheme({
 function AppContent() {
   const { state } = useAuth();
   const { state: eventState, markNotificationAsRead, setUserId } = useEvents();
-  const [authModalOpen, setAuthModalOpen] = React.useState(false);
+  const { loadPantryFromBackend } = useRecipe();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Set user ID for WebSocket connection when user authenticates
   React.useEffect(() => {
@@ -80,6 +81,18 @@ function AppContent() {
       setUserId(null);
     }
   }, [state.isAuthenticated, state.user, setUserId]);
+
+  // Load pantry from backend when user logs in
+  const [pantryLoaded, setPantryLoaded] = useState(false);
+  
+  useEffect(() => {
+    if (state.isAuthenticated && state.token && !pantryLoaded) {
+      loadPantryFromBackend(state.token);
+      setPantryLoaded(true);
+    } else if (!state.isAuthenticated) {
+      setPantryLoaded(false);
+    }
+  }, [state.isAuthenticated, state.token, loadPantryFromBackend, pantryLoaded]);
   
 
   if (state.isLoading) {

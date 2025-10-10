@@ -1,7 +1,5 @@
-// API configuration
-const API_BASE_URL = 'https://lp6heyiqod.execute-api.eu-west-1.amazonaws.com/prod';
 
-// Types
+const API_BASE_URL = 'https://p0ln590w2k.execute-api.eu-west-1.amazonaws.com/prod';
 export interface ApiResponse<T> {
   data?: T;
   error?: string;
@@ -149,7 +147,7 @@ export const api = {
     });
   },
 
-  async addUserIngredient(ingredient: Omit<UserIngredient, 'userId' | 'addedAt'>, token: string): Promise<ApiResponse<{ userIngredient: UserIngredient }>> {
+  async addUserIngredient(ingredient: Omit<UserIngredient, 'userId' | 'addedAt' | 'ingredientId'>, token: string): Promise<ApiResponse<{ userIngredient: UserIngredient }>> {
     return apiCall('/user-ingredients', {
       method: 'POST',
       headers: {

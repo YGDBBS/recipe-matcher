@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useEffect, useReducer, useCallback } from 'react';
 import type { ReactNode } from 'react';
+import { pantryPersistence } from '../services/PantryService';
 
 // Types
 export interface Ingredient {
@@ -125,14 +126,33 @@ function recipeReducer(state: RecipeState, action: RecipeAction): RecipeState {
 const RecipeContext = createContext<{
   state: RecipeState;
   dispatch: React.Dispatch<RecipeAction>;
+  loadPantryFromBackend: (token: string) => Promise<void>;
 } | null>(null);
 
 // Provider component
 export function RecipeProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(recipeReducer, initialState);
 
+  // Load pantry from localStorage on mount
+  useEffect(() => {
+    const localPantry = pantryPersistence.loadFromLocalStorage();
+    if (localPantry.length > 0) {
+      dispatch({ type: 'SET_INGREDIENTS', payload: localPantry });
+    }
+  }, []);
+
+  // Load pantry from backend when user logs in
+  const loadPantryFromBackend = useCallback(async (token: string) => {
+    try {
+      const backendPantry = await pantryPersistence.loadFromBackend(token);
+      dispatch({ type: 'SET_INGREDIENTS', payload: backendPantry });
+    } catch (error) {
+      console.warn('Failed to load pantry from backend:', error);
+    }
+  }, [dispatch]);
+
   return (
-    <RecipeContext.Provider value={{ state, dispatch }}>
+    <RecipeContext.Provider value={{ state, dispatch, loadPantryFromBackend }}>
       {children}
     </RecipeContext.Provider>
   );

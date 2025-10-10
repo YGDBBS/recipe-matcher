@@ -25,6 +25,7 @@ import { useRecipe } from '../context/RecipeContext';
 import { useAuth } from '../context/AuthContext';
 import { useEvents } from '../context/EventContext';
 import { api } from '../services/api';
+import { pantryPersistence } from '../services/PantryService';
 
 const IngredientInput: React.FC = () => {
   const { state, dispatch } = useRecipe();
@@ -121,28 +122,65 @@ const IngredientInput: React.FC = () => {
       return;
     }
 
-    // Add ingredient to local state
+    // Add ingredient using hybrid persistence
     const newIngredient = {
       name: ingredientName,
       quantity: 1,
       unit: 'piece',
     };
 
-    dispatch({ type: 'ADD_INGREDIENT', payload: newIngredient });
-    setInputValue('');
-    setError(null);
+    try {
+      const pantryItem = await pantryPersistence.addIngredient(
+        newIngredient, 
+        authState.isAuthenticated ? authState.token! : undefined
+      );
 
-    // Add notification for ingredient added
-    addNotification({
-      type: 'success',
-      title: 'Ingredient Added',
-      message: `${ingredientName} has been added to your pantry`,
-      data: { ingredient: newIngredient },
-    });
+      dispatch({ type: 'ADD_INGREDIENT', payload: pantryItem });
+      setInputValue('');
+      setError(null);
+
+      // Add notification for ingredient added
+      addNotification({
+        type: 'success',
+        title: 'Ingredient Added',
+        message: `${ingredientName} has been added to your pantry`,
+        data: { ingredient: pantryItem },
+      });
+
+      // Sync with backend if authenticated
+      if (authState.isAuthenticated && authState.token) {
+        pantryPersistence.syncWithBackend(authState.token);
+      }
+    } catch (error) {
+      setError('Failed to add ingredient. Please try again.');
+      console.error('Error adding ingredient:', error);
+    }
   };
 
-  const handleRemoveIngredient = (ingredientName: string) => {
-    dispatch({ type: 'REMOVE_INGREDIENT', payload: ingredientName });
+  const handleRemoveIngredient = async (ingredientName: string) => {
+    try {
+      await pantryPersistence.removeIngredient(
+        ingredientName,
+        authState.isAuthenticated ? authState.token! : undefined
+      );
+
+      dispatch({ type: 'REMOVE_INGREDIENT', payload: ingredientName });
+
+      // Add notification for ingredient removed
+      addNotification({
+        type: 'info',
+        title: 'Ingredient Removed',
+        message: `${ingredientName} has been removed from your pantry`,
+      });
+
+      // Sync with backend if authenticated
+      if (authState.isAuthenticated && authState.token) {
+        pantryPersistence.syncWithBackend(authState.token);
+      }
+    } catch (error) {
+      setError('Failed to remove ingredient. Please try again.');
+      console.error('Error removing ingredient:', error);
+    }
   };
 
   const handleSearchRecipes = async () => {
