@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "lint": "echo 'No linting configured yet' && exit 0",
+    "lint": "eslint .",
     "test": "echo 'No tests configured yet' && exit 0",
     "cdk": "cdk",
     "deploy": "cdk deploy",
