@@ -103,7 +103,7 @@ function eventReducer(state: EventState, action: EventAction): EventState {
         unreadCount: Math.max(0, state.unreadCount - 1),
       };
     
-    case 'NOTIFICATION_REMOVE':
+    case 'NOTIFICATION_REMOVE': {
       const notificationToRemove = state.notifications.find(n => n.id === action.payload);
       return {
         ...state,
@@ -112,6 +112,7 @@ function eventReducer(state: EventState, action: EventAction): EventState {
           ? Math.max(0, state.unreadCount - 1) 
           : state.unreadCount,
       };
+    }
     
     case 'NOTIFICATION_CLEAR_ALL':
       return {
@@ -183,7 +184,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
           dispatch({ type: 'EVENT_RECEIVED', payload: data });
           handleEvent(data);
         } catch (error) {
-          // Error parsing WebSocket message
+          console.error('Error parsing WebSocket message:', error);
         }
       };
       
@@ -198,6 +199,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
       
       wsRef.current = ws;
     } catch (error) {
+      console.error('Failed to connect to WebSocket:', error);
       dispatch({ type: 'CONNECTION_ERROR', payload: 'Failed to connect to WebSocket' });
     }
   };

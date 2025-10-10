@@ -45,7 +45,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
     case 'AUTH_START':
       return { ...state, isLoading: true, error: null };
-    case 'AUTH_SUCCESS':
+    case 'AUTH_SUCCESS': {
       const newState = {
         ...state,
         user: action.payload.user,
@@ -55,6 +55,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         error: null,
       };
       return newState;
+    }
     case 'AUTH_FAILURE':
       return {
         ...state,

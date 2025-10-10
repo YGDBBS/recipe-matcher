@@ -1,4 +1,55 @@
 import React, { useState, useEffect, useRef } from 'react';
+
+// Speech Recognition API types
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+  message: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  onstart: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null;
+  onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => any) | null;
+  onend: ((this: SpeechRecognition, ev: Event) => any) | null;
+}
+
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  readonly length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: {
+      new(): SpeechRecognition;
+    };
+    webkitSpeechRecognition: {
+      new(): SpeechRecognition;
+    };
+  }
+}
 import {
   Box,
   Card,
@@ -38,7 +89,7 @@ const IngredientInput: React.FC = () => {
   // Voice recognition state
   const [isListening, setIsListening] = useState(false);
   const [isVoiceSupported, setIsVoiceSupported] = useState(false);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   // Initialize voice recognition
   useEffect(() => {
@@ -62,7 +113,7 @@ const IngredientInput: React.FC = () => {
         });
       };
       
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         const transcript = event.results[0][0].transcript;
         setInputValue(transcript);
         addNotification({
@@ -72,7 +123,7 @@ const IngredientInput: React.FC = () => {
         });
       };
       
-      recognition.onerror = (event: any) => {
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         setIsListening(false);
         
         let errorMessage = `Error: ${event.error}`;
@@ -151,9 +202,9 @@ const IngredientInput: React.FC = () => {
       if (authState.isAuthenticated && authState.token) {
         pantryPersistence.syncWithBackend(authState.token);
       }
-    } catch (error) {
+    } catch {
       setError('Failed to add ingredient. Please try again.');
-      console.error('Error adding ingredient:', error);
+      // Error adding ingredient
     }
   };
 
@@ -177,9 +228,9 @@ const IngredientInput: React.FC = () => {
       if (authState.isAuthenticated && authState.token) {
         pantryPersistence.syncWithBackend(authState.token);
       }
-    } catch (error) {
+    } catch {
       setError('Failed to remove ingredient. Please try again.');
-      console.error('Error removing ingredient:', error);
+      console.error('Error removing ingredient');
     }
   };
 
@@ -267,8 +318,8 @@ const IngredientInput: React.FC = () => {
         message: `Found ${sortedRecipes.length} recipes matching your ingredients`,
         data: { recipeCount: sortedRecipes.length },
       });
-
-    } catch (err) {
+      
+    } catch {
       setError('Failed to search recipes. Please try again.');
     } finally {
       setIsSearching(false);
