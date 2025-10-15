@@ -29,8 +29,11 @@ jobs:
 
       - name: Run tests (frontend)
         working-directory: ./frontend
-        run: npm test -- --watch=false
-        continue-on-error: true
+        run: npm run test:run
+
+      - name: Run tests (backend)
+        working-directory: ./backend
+        run: npm run test:ci
 
       - name: Build frontend
         working-directory: ./frontend
