@@ -39,33 +39,30 @@ export class StatelessStack extends cdk.Stack {
       autoDeleteObjects: true,
     });
 
-    // CloudFront distribution for React frontend
-    const frontendDistribution = new cloudfront.Distribution(this, 'FrontendDistribution', {
-      defaultBehavior: {
-        origin: new origins.S3StaticWebsiteOrigin(frontendBucket),
-        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-        cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-      },
-      errorResponses: [
-        {
-          httpStatus: 404,
-          responseHttpStatus: 200,
-          responsePagePath: '/index.html',
-        },
-        {
-          httpStatus: 403,
-          responseHttpStatus: 200,
-          responsePagePath: '/index.html',
-        },
-      ],
-    });
+    // CloudFront distribution for React frontend (temporarily disabled due to AWS account verification)
+    // const frontendDistribution = new cloudfront.Distribution(this, 'FrontendDistribution', {
+    //   defaultBehavior: {
+    //     origin: new origins.S3StaticWebsiteOrigin(frontendBucket),
+    //     viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+    //     cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+    //   },
+    //   errorResponses: [
+    //     {
+    //       httpStatus: 404,
+    //       responseHttpStatus: 200,
+    //       responsePagePath: '/index.html',
+    //     },
+    //     {
+    //       httpStatus: 403,
+    //       responseHttpStatus: 200,
+    //       responsePagePath: '/index.html',
+    //     },
+    //   ],
+    // });
 
     // Reference DynamoDB tables from stateful stack
     const usersTable = statefulStack.usersTable;
     const recipesTable = statefulStack.recipesTable;
-    const ingredientsTable = statefulStack.ingredientsTable;
-    const userIngredientsTable = statefulStack.userIngredientsTable;
-    const matchesTable = statefulStack.matchesTable;
 
     // EventBridge for event-driven architecture
     const eventBus = new events.EventBus(this, 'RecipeMatcherEventBus', {
@@ -136,9 +133,7 @@ export class StatelessStack extends cdk.Stack {
       environment: {
         USERS_TABLE: usersTable.tableName,
         RECIPES_TABLE: recipesTable.tableName,
-        INGREDIENTS_TABLE: ingredientsTable.tableName,
-        USER_INGREDIENTS_TABLE: userIngredientsTable.tableName,
-        MATCHES_TABLE: matchesTable.tableName,
+        RECIPES_TABLE_LEGACY: 'recipe-matcher-recipes', // Existing table
         CONNECTIONS_TABLE: connectionsTable.tableName,
         RECIPE_IMAGES_BUCKET: recipeImagesBucket.bucketName,
         USER_POOL_ID: userPool.userPoolId,
@@ -270,9 +265,6 @@ export class StatelessStack extends cdk.Stack {
     // Grant permissions to Lambda functions
     usersTable.grantReadWriteData(authLambda);
     recipesTable.grantReadWriteData(recipesLambda);
-    ingredientsTable.grantReadWriteData(ingredientsLambda);
-    userIngredientsTable.grantReadWriteData(ingredientsLambda);
-    matchesTable.grantReadWriteData(matchingLambda);
     recipeImagesBucket.grantReadWrite(recipesLambda);
 
     // Grant EventBridge permissions
@@ -424,15 +416,16 @@ export class StatelessStack extends cdk.Stack {
       description: 'S3 Bucket for React frontend',
     });
 
-    new cdk.CfnOutput(this, 'FrontendDistributionId', {
-      value: frontendDistribution.distributionId,
-      description: 'CloudFront Distribution ID for React frontend',
-    });
+    // CloudFront outputs temporarily disabled
+    // new cdk.CfnOutput(this, 'FrontendDistributionId', {
+    //   value: frontendDistribution.distributionId,
+    //   description: 'CloudFront Distribution ID for React frontend',
+    // });
 
-    new cdk.CfnOutput(this, 'FrontendUrl', {
-      value: `https://${frontendDistribution.distributionDomainName}`,
-      description: 'Frontend URL',
-    });
+    // new cdk.CfnOutput(this, 'FrontendUrl', {
+    //   value: `https://${frontendDistribution.distributionDomainName}`,
+    //   description: 'Frontend URL',
+    // });
 
     new cdk.CfnOutput(this, 'EventBusName', {
       value: eventBus.eventBusName,
