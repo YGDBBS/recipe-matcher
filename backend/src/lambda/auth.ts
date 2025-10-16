@@ -1,19 +1,44 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcryptjs';
 import { EventPublisher } from '../utils/event-publisher';
 
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
+const secretsManager = new SecretsManagerClient({});
 
-// JWT secret - in production, use environment variable
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
+// JWT secret - retrieved from AWS Secrets Manager
+let cachedJwtSecret: string | null = null;
 const JWT_EXPIRES_IN = '7d';
 
 // Event publisher
 const eventPublisher = new EventPublisher(process.env.EVENT_BUS_NAME || 'recipe-matcher-events');
+
+// Function to get JWT secret from Secrets Manager with caching
+async function getJwtSecret(): Promise<string> {
+  if (cachedJwtSecret) {
+    return cachedJwtSecret;
+  }
+
+  try {
+    const command = new GetSecretValueCommand({
+      SecretId: 'recipe-matcher-jwt-secret'
+    });
+    
+    const response = await secretsManager.send(command);
+    cachedJwtSecret = response.SecretString || '';
+    if (!cachedJwtSecret) {
+      throw new Error('JWT secret is empty');
+    }
+    return cachedJwtSecret;
+  } catch (error) {
+    console.error('Error retrieving JWT secret from Secrets Manager:', error);
+    throw new Error('Failed to retrieve JWT secret');
+  }
+}
 
 interface User {
   userId: string;
@@ -171,13 +196,14 @@ async function loginUser(loginData: LoginRequest): Promise<APIGatewayProxyResult
     }
 
     // Generate JWT token
+    const jwtSecret = await getJwtSecret();
     const token = jwt.sign(
       { 
         userId: user.userId, 
         email: user.email,
         username: user.username 
       },
-      JWT_SECRET,
+      jwtSecret,
       { expiresIn: JWT_EXPIRES_IN }
     );
 
@@ -256,13 +282,14 @@ async function registerUser(userData: RegisterRequest): Promise<APIGatewayProxyR
     }));
 
     // Generate JWT token
+    const jwtSecret = await getJwtSecret();
     const token = jwt.sign(
       { 
         userId: user.userId, 
         email: user.email,
         username: user.username 
       },
-      JWT_SECRET,
+      jwtSecret,
       { expiresIn: JWT_EXPIRES_IN }
     );
 
@@ -318,7 +345,7 @@ async function getUserProfile(authorization?: string): Promise<APIGatewayProxyRe
       };
     }
 
-    const userId = extractUserIdFromToken(authorization);
+    const userId = await extractUserIdFromToken(authorization);
     if (!userId) {
       return {
         statusCode: 401,
@@ -373,7 +400,7 @@ async function updateUserProfile(authorization: string | undefined, userData: an
       };
     }
 
-    const userId = extractUserIdFromToken(authorization);
+    const userId = await extractUserIdFromToken(authorization);
     
     // Get existing user
     const existingUser = await docClient.send(new GetCommand({
@@ -420,10 +447,11 @@ function generateId(): string {
   return Math.random().toString(36).substr(2, 9);
 }
 
-function extractUserIdFromToken(authorization: string): string | null {
+async function extractUserIdFromToken(authorization: string): Promise<string | null> {
   try {
     const token = authorization.replace('Bearer ', '');
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const jwtSecret = await getJwtSecret();
+    const decoded = jwt.verify(token, jwtSecret) as any;
     return decoded.userId;
   } catch (error) {
     console.error('Token verification error:', error);
@@ -446,7 +474,7 @@ async function verifyToken(authorization?: string): Promise<APIGatewayProxyResul
       };
     }
 
-    const userId = extractUserIdFromToken(authorization);
+    const userId = await extractUserIdFromToken(authorization);
     if (!userId) {
       return {
         statusCode: 401,

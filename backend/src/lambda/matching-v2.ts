@@ -1,4 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import IngredientMatcher, { RecipeMatch } from '../services/ingredient-matcher';
 import { extractUserIdFromToken } from '../helpers/auth-helpers';
 
@@ -92,7 +94,7 @@ async function findMatchingRecipes(
       };
     }
 
-    const userId = extractUserIdFromToken(authorization);
+    const userId = await extractUserIdFromToken(authorization);
     if (!userId) {
       return {
         statusCode: 401,

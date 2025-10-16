@@ -8,6 +8,7 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as sns from 'aws-cdk-lib/aws-sns';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as websocket from 'aws-cdk-lib/aws-apigatewayv2';
 import * as websocketIntegrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
@@ -138,7 +139,6 @@ export class StatelessStack extends cdk.Stack {
         RECIPE_IMAGES_BUCKET: recipeImagesBucket.bucketName,
         USER_POOL_ID: userPool.userPoolId,
         USER_POOL_CLIENT_ID: userPoolClient.userPoolClientId,
-        JWT_SECRET: 'your-super-secret-jwt-key-change-in-production-recipe-matcher-2024',
         EVENT_BUS_NAME: eventBus.eventBusName,
         NOTIFICATIONS_TOPIC_ARN: notificationsTopic.topicArn,
         EVENT_PROCESSING_QUEUE_URL: eventProcessingQueue.queueUrl,
@@ -288,6 +288,19 @@ export class StatelessStack extends cdk.Stack {
     // Grant SNS permissions for notifications
     notificationsTopic.grantPublish(notificationHandlerLambda);
     notificationsTopic.grantPublish(eventHandlerLambda);
+
+    // Grant Secrets Manager permissions for JWT secret
+    authLambda.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['secretsmanager:GetSecretValue'],
+      resources: ['arn:aws:secretsmanager:eu-west-1:*:secret:recipe-matcher-jwt-secret*']
+    }));
+    
+    matchingV2Lambda.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['secretsmanager:GetSecretValue'],
+      resources: ['arn:aws:secretsmanager:eu-west-1:*:secret:recipe-matcher-jwt-secret*']
+    }));
 
     // Grant SQS permissions
     eventProcessingQueue.grantSendMessages(eventHandlerLambda);
