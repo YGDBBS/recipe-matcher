@@ -177,6 +177,15 @@ export class StatelessStack extends cdk.Stack {
       handler: 'handler',
     });
 
+    // Matching v2 Lambda (Enhanced fuzzy matching)
+    const matchingV2Lambda = new NodejsFunction(this, 'MatchingV2Lambda', {
+      ...commonLambdaProps,
+      functionName: 'recipe-matcher-matching-v2',
+      entry: 'src/lambda/matching-v2.ts',
+      handler: 'handler',
+      timeout: cdk.Duration.minutes(2), // Longer timeout for complex matching
+    });
+
     // Event Handler Lambda Functions
     const eventHandlerLambda = new NodejsFunction(this, 'EventHandlerLambda', {
       ...commonLambdaProps,
@@ -264,7 +273,9 @@ export class StatelessStack extends cdk.Stack {
 
     // Grant permissions to Lambda functions
     usersTable.grantReadWriteData(authLambda);
+    usersTable.grantReadWriteData(ingredientsLambda); // Grant access to users table for user ingredients
     recipesTable.grantReadWriteData(recipesLambda);
+    recipesTable.grantReadWriteData(matchingV2Lambda); // Grant access to recipes table for fuzzy matching
     recipeImagesBucket.grantReadWrite(recipesLambda);
 
     // Grant EventBridge permissions
@@ -272,6 +283,7 @@ export class StatelessStack extends cdk.Stack {
     eventBus.grantPutEventsTo(recipesLambda);
     eventBus.grantPutEventsTo(ingredientsLambda);
     eventBus.grantPutEventsTo(matchingLambda);
+    eventBus.grantPutEventsTo(matchingV2Lambda);
 
     // Grant SNS permissions for notifications
     notificationsTopic.grantPublish(notificationHandlerLambda);
@@ -389,6 +401,17 @@ export class StatelessStack extends cdk.Stack {
     // Matching endpoints
     const matchingResource = api.root.addResource('matching');
     matchingResource.addMethod('POST', new apigateway.LambdaIntegration(matchingLambda));
+
+    // Matching v2 endpoints (Enhanced fuzzy matching)
+    const matchingV2Resource = api.root.addResource('matching-v2');
+    const findRecipesResource = matchingV2Resource.addResource('find-recipes');
+    findRecipesResource.addMethod('POST', new apigateway.LambdaIntegration(matchingV2Lambda));
+    
+    const calculateMatchResource = matchingV2Resource.addResource('calculate-match');
+    calculateMatchResource.addMethod('POST', new apigateway.LambdaIntegration(matchingV2Lambda));
+    
+    const ingredientAnalysisResource = matchingV2Resource.addResource('ingredient-analysis');
+    ingredientAnalysisResource.addMethod('POST', new apigateway.LambdaIntegration(matchingV2Lambda));
 
     // Outputs
     new cdk.CfnOutput(this, 'ApiUrl', {

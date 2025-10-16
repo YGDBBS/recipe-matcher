@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, ScanCommand, DeleteCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
@@ -194,16 +194,14 @@ async function getUserIngredients(authorization?: string, queryParams?: any): Pr
     const userId = extractUserIdFromToken(authorization);
     const { limit = '50' } = queryParams || {};
 
-    const result = await docClient.send(new QueryCommand({
-      TableName: process.env.USER_INGREDIENTS_TABLE,
-      KeyConditionExpression: 'userId = :userId',
-      ExpressionAttributeValues: {
-        ':userId': userId,
+    const result = await docClient.send(new GetCommand({
+      TableName: process.env.USERS_TABLE,
+      Key: {
+        userId: userId,
       },
-      Limit: parseInt(limit),
     }));
 
-    const userIngredients = result.Items as UserIngredient[] || [];
+    const userIngredients = result.Item?.ingredients || [];
 
     return {
       statusCode: 200,
@@ -242,21 +240,40 @@ async function addUserIngredient(ingredientData: any, authorization?: string): P
       userId,
       ingredientId: ingredientData.ingredientId || generateId(),
       name: ingredientData.name.toLowerCase(),
-      quantity: ingredientData.quantity,
-      unit: ingredientData.unit,
-      expiryDate: ingredientData.expiryDate,
+      quantity: ingredientData.quantity || 1,
+      unit: ingredientData.unit || 'piece',
+      expiryDate: ingredientData.expiryDate || undefined,
       addedAt: now,
     };
 
-    await docClient.send(new PutCommand({
-      TableName: process.env.USER_INGREDIENTS_TABLE,
-      Item: userIngredient,
+    // Remove undefined values to avoid DynamoDB errors
+    const cleanUserIngredient = Object.fromEntries(
+      Object.entries(userIngredient).filter(([_, value]) => value !== undefined)
+    ) as UserIngredient;
+
+    // Get current user data
+    const userResult = await docClient.send(new GetCommand({
+      TableName: process.env.USERS_TABLE,
+      Key: { userId },
+    }));
+
+    const currentIngredients = userResult.Item?.ingredients || [];
+    const updatedIngredients = [...currentIngredients, cleanUserIngredient];
+
+    // Update user with new ingredient
+    await docClient.send(new UpdateCommand({
+      TableName: process.env.USERS_TABLE,
+      Key: { userId },
+      UpdateExpression: 'SET ingredients = :ingredients',
+      ExpressionAttributeValues: {
+        ':ingredients': updatedIngredients,
+      },
     }));
 
     return {
       statusCode: 201,
       headers,
-      body: JSON.stringify({ userIngredient }),
+      body: JSON.stringify({ userIngredient: cleanUserIngredient }),
     };
   } catch (error) {
     console.error('Add user ingredient error:', error);
@@ -294,11 +311,22 @@ async function removeUserIngredient(ingredientData: any, authorization?: string)
       };
     }
 
-    await docClient.send(new DeleteCommand({
-      TableName: process.env.USER_INGREDIENTS_TABLE,
-      Key: {
-        userId,
-        ingredientId,
+    // Get current user data
+    const userResult = await docClient.send(new GetCommand({
+      TableName: process.env.USERS_TABLE,
+      Key: { userId },
+    }));
+
+    const currentIngredients = userResult.Item?.ingredients || [];
+    const updatedIngredients = currentIngredients.filter((ing: any) => ing.ingredientId !== ingredientId);
+
+    // Update user with removed ingredient
+    await docClient.send(new UpdateCommand({
+      TableName: process.env.USERS_TABLE,
+      Key: { userId },
+      UpdateExpression: 'SET ingredients = :ingredients',
+      ExpressionAttributeValues: {
+        ':ingredients': updatedIngredients,
       },
     }));
 

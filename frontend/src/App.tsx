@@ -86,13 +86,13 @@ function AppContent() {
   const [pantryLoaded, setPantryLoaded] = useState(false);
   
   useEffect(() => {
-    if (state.isAuthenticated && state.token && !pantryLoaded) {
+    if (state.isAuthenticated && state.token && !pantryLoaded && !state.isLoading) {
       loadPantryFromBackend(state.token);
       setPantryLoaded(true);
     } else if (!state.isAuthenticated) {
       setPantryLoaded(false);
     }
-  }, [state.isAuthenticated, state.token, loadPantryFromBackend, pantryLoaded]);
+  }, [state.isAuthenticated, state.token, loadPantryFromBackend, pantryLoaded, state.isLoading]);
   
 
   if (state.isLoading) {

@@ -168,10 +168,10 @@ const RecipeResults: React.FC = () => {
                 {/* Available vs Missing Ingredients */}
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="subtitle2" gutterBottom>
-                    You have ({recipe.availableIngredients.length}):
+                    You have ({recipe.availableIngredients?.length}):
                   </Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
-                    {recipe.availableIngredients.map((ingredient, index) => (
+                    {recipe.availableIngredients?.map((ingredient, index) => (
                       <Chip
                         key={index}
                         label={ingredient}
@@ -185,7 +185,7 @@ const RecipeResults: React.FC = () => {
                     ))}
                   </Box>
 
-                  {recipe.missingIngredients.length > 0 && (
+                  {recipe.missingIngredients && recipe.missingIngredients.length > 0 && (
                     <>
                       <Typography variant="subtitle2" gutterBottom>
                         Missing ({recipe.missingIngredients.length}):
@@ -209,7 +209,7 @@ const RecipeResults: React.FC = () => {
                 </Box>
 
                 {/* Dietary Tags */}
-                {recipe.dietaryTags.length > 0 && (
+                {recipe.dietaryTags && recipe.dietaryTags.length > 0 && (
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="subtitle2" gutterBottom>
                       Dietary:
@@ -237,7 +237,7 @@ const RecipeResults: React.FC = () => {
                     Ingredients:
                   </Typography>
                   <List dense>
-                    {recipe.ingredients.map((ingredient, index) => (
+                    {recipe.ingredients?.map((ingredient, index) => (
                       <ListItem key={index} sx={{ py: 0.5 }}>
                         <ListItemText
                           primary={`${ingredient.quantity} ${ingredient.unit} ${ingredient.name}`}
@@ -251,7 +251,7 @@ const RecipeResults: React.FC = () => {
                     Instructions:
                   </Typography>
                   <List dense>
-                    {recipe.instructions.map((instruction, index) => (
+                    {recipe.instructions?.map((instruction, index) => (
                       <ListItem key={index} sx={{ py: 0.5 }}>
                         <ListItemText
                           primary={`${index + 1}. ${instruction}`}

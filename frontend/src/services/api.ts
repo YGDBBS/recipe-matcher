@@ -1,5 +1,5 @@
 
-const API_BASE_URL = 'https://p0ln590w2k.execute-api.eu-west-1.amazonaws.com/prod';
+const API_BASE_URL = 'https://wrkkwv7lrb.execute-api.eu-west-1.amazonaws.com/prod';
 export interface ApiResponse<T> {
   data?: T;
   error?: string;
@@ -9,23 +9,26 @@ export interface ApiResponse<T> {
 export interface Recipe {
   recipeId: string;
   title: string;
-  description: string;
-  ingredients: {
+  description?: string;
+  ingredients?: {
     name: string;
     quantity: string;
     unit: string;
   }[];
-  instructions: string[];
+  instructions?: string[];
   cookingTime: number;
   difficultyLevel: 'easy' | 'medium' | 'hard';
   servings: number;
-  dietaryTags: string[];
+  dietaryTags?: string[];
   imageUrl?: string;
   matchPercentage?: number;
   missingIngredients?: string[];
   availableIngredients?: string[];
-  userId: string;
-  createdAt: string;
+  matchedIngredients?: string[];
+  totalIngredients?: number;
+  author?: string;
+  userId?: string;
+  createdAt?: string;
   rating?: number;
   reviewCount?: number;
 }
@@ -59,6 +62,12 @@ export interface MatchResponse {
   matches: Recipe[];
   totalMatches: number;
   userIngredients: string[];
+  searchCriteria: {
+    dietaryRestrictions: string[];
+    maxCookingTime?: number;
+    difficultyLevel?: string;
+    minMatchPercentage: number;
+  };
 }
 
 // Helper function to make API calls
@@ -167,9 +176,9 @@ export const api = {
     });
   },
 
-  // Matching
+  // Matching (Enhanced fuzzy matching)
   async findMatchingRecipes(request: MatchRequest, token: string): Promise<ApiResponse<MatchResponse>> {
-    return apiCall('/matching/find-recipes', {
+    return apiCall('/matching-v2/find-recipes', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -180,12 +189,41 @@ export const api = {
 
   async calculateMatch(userIngredients: string[], recipeIngredients: string[]): Promise<ApiResponse<{
     matchPercentage: number;
-    availableIngredients: string[];
+    matchedIngredients: string[];
     missingIngredients: string[];
+    totalIngredients: number;
   }>> {
-    return apiCall('/matching/calculate-match', {
+    return apiCall('/matching-v2/calculate-match', {
       method: 'POST',
       body: JSON.stringify({ userIngredients, recipeIngredients }),
+    });
+  },
+
+  // New enhanced matching endpoints
+  async analyzeIngredientMatching(userIngredients: string[], recipeId: string, token: string): Promise<ApiResponse<{
+    recipeTitle: string;
+    analysis: {
+      userIngredient: string;
+      bestMatch: {
+        userIngredient: string;
+        recipeIngredient: string;
+        matchScore: number;
+        isExactMatch: boolean;
+      } | null;
+      allMatches: Array<{
+        userIngredient: string;
+        recipeIngredient: string;
+        matchScore: number;
+        isExactMatch: boolean;
+      }>;
+    }[];
+  }>> {
+    return apiCall('/matching-v2/ingredient-analysis', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ userIngredients, recipeId }),
     });
   },
 

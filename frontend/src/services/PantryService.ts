@@ -164,7 +164,10 @@ class PantryService {
         return mergedItems;
       }
     } catch (error) {
-      console.warn('Failed to load pantry from backend:', error);
+      // Only log if it's not an expected authentication error
+      if (error && typeof error === 'object' && 'status' in error && error.status !== 401) {
+        console.warn('Failed to load pantry from backend:', error);
+      }
       // Fall back to localStorage
       return this.loadFromLocalStorage();
     } finally {

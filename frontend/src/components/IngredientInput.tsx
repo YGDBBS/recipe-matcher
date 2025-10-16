@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import type { Recipe } from '../context/RecipeContext';
 
 // Speech Recognition API types
 interface SpeechRecognitionEvent extends Event {
@@ -247,79 +248,61 @@ const IngredientInput: React.FC = () => {
     try {
       const ingredientNames = state.userIngredients.map(ing => ing.name);
       
-      // First, get all recipes from the database
-      const recipesResponse = await api.getRecipes({ limit: 50 });
+      // Use the new enhanced fuzzy matching API
+      const matchRequest = {
+        userIngredients: ingredientNames,
+        minMatchPercentage: 30, // Minimum 30% match
+        limit: 20, // Limit to top 20 results
+        dietaryRestrictions: [], // Can be extended later
+        maxCookingTime: undefined, // No time limit
+        difficultyLevel: undefined, // No difficulty filter
+      };
+
+      const matchResponse = await api.findMatchingRecipes(matchRequest, authState.token || '');
       
-      if (recipesResponse.error) {
-        setError('Failed to fetch recipes from database');
+      if (matchResponse.error) {
+        setError(`Failed to find matching recipes: ${matchResponse.error}`);
         return;
       }
 
-      if (!recipesResponse.data?.recipes) {
-        setError('No recipes found in database');
+      if (!matchResponse.data?.matches) {
+        setError('No matching recipes found');
         return;
       }
 
-      // Filter out ingredient mapping entries (they have 'ingredient' property)
-      const actualRecipes = recipesResponse.data.recipes.filter(recipe => 
-        !('ingredient' in recipe) && recipe.title
-      );
+      // The API already returns recipes with match percentages and ingredient analysis
+      const matchedRecipes: Recipe[] = matchResponse.data.matches.map(recipe => ({
+        recipeId: recipe.recipeId,
+        title: recipe.title,
+        description: recipe.description || '',
+        ingredients: recipe.ingredients || [],
+        instructions: recipe.instructions || [],
+        cookingTime: recipe.cookingTime,
+        difficultyLevel: recipe.difficultyLevel || 'easy',
+        servings: recipe.servings,
+        dietaryTags: recipe.dietaryTags || [],
+        imageUrl: recipe.imageUrl,
+        matchPercentage: recipe.matchPercentage || 0,
+        missingIngredients: recipe.missingIngredients || [],
+        availableIngredients: recipe.matchedIngredients || [],
+        userId: recipe.author || 'unknown',
+        createdAt: new Date().toISOString(),
+        rating: recipe.rating,
+        reviewCount: recipe.reviewCount,
+      }));
 
-      if (actualRecipes.length === 0) {
-        setError('No recipes available. Please try again later.');
-        return;
-      }
-
-      // Calculate matches for each recipe
-      const matchedRecipes = actualRecipes.map(recipe => {
-        const recipeIngredients = recipe.ingredients.map(ing => ing.name.toLowerCase());
-        const userIngredientsLower = ingredientNames.map(ing => ing.toLowerCase());
-        
-        // Find available and missing ingredients
-        const availableIngredients = recipeIngredients.filter(ingredient =>
-          userIngredientsLower.some(userIng => 
-            userIng.includes(ingredient) || ingredient.includes(userIng)
-          )
-        );
-        
-        const missingIngredients = recipeIngredients.filter(ingredient =>
-          !userIngredientsLower.some(userIng => 
-            userIng.includes(ingredient) || ingredient.includes(userIng)
-          )
-        );
-
-        // Calculate match percentage
-        const matchPercentage = recipeIngredients.length > 0 
-          ? Math.round((availableIngredients.length / recipeIngredients.length) * 100)
-          : 0;
-
-        return {
-          ...recipe,
-          matchPercentage,
-          missingIngredients,
-          availableIngredients,
-        };
-      });
-
-      // Filter recipes that have at least some available ingredients
-      const filteredRecipes = matchedRecipes.filter(recipe => 
-        recipe.availableIngredients.length > 0
-      );
-
-      // Sort by match percentage (highest first)
-      const sortedRecipes = filteredRecipes.sort((a, b) => b.matchPercentage - a.matchPercentage);
-
-      dispatch({ type: 'SET_RECIPES', payload: sortedRecipes });
+      dispatch({ type: 'SET_RECIPES', payload: matchedRecipes });
 
       // Add notification for successful search
       addNotification({
         type: 'success',
         title: 'Recipes Found!',
-        message: `Found ${sortedRecipes.length} recipes matching your ingredients`,
-        data: { recipeCount: sortedRecipes.length },
+        message: `Found ${matchedRecipes.length} recipes matching your ingredients!`,
+        data: { recipeCount: matchedRecipes.length },
       });
       
-    } catch {
+    } catch (error) {
+      console.error('Error searching recipes:', error);
       setError('Failed to search recipes. Please try again.');
     } finally {
       setIsSearching(false);
