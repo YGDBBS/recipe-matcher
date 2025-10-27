@@ -17,18 +17,14 @@ interface NotificationMessage {
 }
 
 export const handler: SNSHandler = async (event: SNSEvent) => {
-  console.log('SNS Event received:', JSON.stringify(event, null, 2));
-
   for (const record of event.Records) {
     try {
       const message: NotificationMessage = JSON.parse(record.Sns.Message);
-      console.log('Processing notification:', message);
 
       // Get user preferences for notification delivery
       const user = await getUserPreferences(message.userId);
       
       if (!user) {
-        console.log('User not found:', message.userId);
         continue;
       }
 
@@ -79,70 +75,62 @@ async function processNotification(notification: NotificationMessage, user: any)
       break;
     
     default:
-      console.log('Unknown notification type:', notificationType);
+      // Unknown notification type
   }
 }
 
 async function handleWelcomeNotification(notification: NotificationMessage, user: any) {
-  console.log('Sending welcome notification to:', user.email);
-  
   // In a real implementation, you would:
   // 1. Send email via SES
   // 2. Send push notification if user has mobile app
   // 3. Store in user's notification history
   
-  // For now, just log it
-  console.log('Welcome notification:', {
+  // For now, just log it (keeping comment but removing console.log)
+  const welcomeNotification = {
     to: user.email,
     title: notification.title,
     message: notification.message,
-  });
+  };
 }
 
 async function handleRecipeMatchedNotification(notification: NotificationMessage, user: any) {
-  console.log('Sending recipe match notification to:', user.email);
-  
   // In a real implementation, you would:
   // 1. Send email with recipe details
   // 2. Send push notification
   // 3. Store in user's notification history
   
-  console.log('Recipe match notification:', {
+  const recipeMatchNotification = {
     to: user.email,
     title: notification.title,
     message: notification.message,
     data: notification.data,
-  });
+  };
 }
 
 async function handleRecipeSharedNotification(notification: NotificationMessage, user: any) {
-  console.log('Sending recipe shared notification to:', user.email);
-  
   // In a real implementation, you would:
   // 1. Send email with shared recipe
   // 2. Send push notification
   // 3. Store in user's notification history
   
-  console.log('Recipe shared notification:', {
+  const recipeSharedNotification = {
     to: user.email,
     title: notification.title,
     message: notification.message,
     data: notification.data,
-  });
+  };
 }
 
 async function handleRecipeUpdatedNotification(notification: NotificationMessage, user: any) {
-  console.log('Sending recipe updated notification to:', user.email);
-  
   // In a real implementation, you would:
   // 1. Send email about recipe updates
   // 2. Send push notification
   // 3. Store in user's notification history
   
-  console.log('Recipe updated notification:', {
+  const recipeUpdatedNotification = {
     to: user.email,
     title: notification.title,
     message: notification.message,
     data: notification.data,
-  });
+  };
 }

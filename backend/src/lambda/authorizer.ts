@@ -30,20 +30,14 @@ async function getJwtSecret(): Promise<string> {
 }
 
 export const handler = async (event: any): Promise<APIGatewayAuthorizerResult> => {
-  console.log('Full authorizer event:', JSON.stringify(event, null, 2));
-  
   const methodArn = event.methodArn;
   const authorizationToken = event.authorizationToken || 
     (event.headers && event.headers.Authorization) ||
     (event.headers && event.headers.authorization);
   const httpMethod = event.httpMethod || event.requestContext?.httpMethod;
-  
-  console.log('Authorizer event received, httpMethod:', httpMethod);
-  console.log('Has authorizationToken:', !!authorizationToken);
 
   // Allow OPTIONS requests to pass through for CORS preflight
   if (httpMethod === 'OPTIONS' || !authorizationToken) {
-    console.log('Allowing request through - OPTIONS or no token');
     return {
       principalId: 'anonymous',
       policyDocument: {
@@ -63,18 +57,14 @@ export const handler = async (event: any): Promise<APIGatewayAuthorizerResult> =
   }
 
   try {
-    console.log('Attempting to verify token...');
-    
     // Remove 'Bearer ' prefix if present
     const token = authorizationToken.replace('Bearer ', '');
 
     // Get JWT secret
     const jwtSecret = await getJwtSecret();
-    console.log('JWT secret retrieved successfully');
 
     // Verify and decode the token
     const decoded = jwt.verify(token, jwtSecret) as { userId: string };
-    console.log('Token verified, userId:', decoded.userId);
 
     // Extract user ID from the token
     const userId = decoded.userId;

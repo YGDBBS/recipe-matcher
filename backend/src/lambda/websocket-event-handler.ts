@@ -11,11 +11,6 @@ const apiGateway = new ApiGatewayManagementApiClient({
 });
 
 export const handler = async (event: EventBridgeEvent<string, any>): Promise<void> => {
-  console.info('🚀 WebSocket Event Handler received event:', JSON.stringify(event, null, 2));
-  console.info('📅 Event timestamp:', new Date().toISOString());
-  console.info('🎯 Event source:', event.source);
-  console.info('📋 Event detail type:', event['detail-type']);
-
   try {
     // Get all active connections
     const connections = await docClient.send(new ScanCommand({
@@ -37,10 +32,8 @@ export const handler = async (event: EventBridgeEvent<string, any>): Promise<voi
     console.info('🔄 Transformed event for frontend:', JSON.stringify(frontendEvent, null, 2));
 
     // Send event to all connected clients
-    console.info('📤 Sending event to all connected clients...');
     const sendPromises = connections.Items.map(async (connection) => {
       try {
-        console.info(`📨 Sending to connection: ${connection.connectionId} (User: ${connection.userId})`);
         await apiGateway.send(new PostToConnectionCommand({
           ConnectionId: connection.connectionId,
           Data: JSON.stringify(frontendEvent),
@@ -57,12 +50,7 @@ export const handler = async (event: EventBridgeEvent<string, any>): Promise<voi
       }
     });
 
-    const results = await Promise.allSettled(sendPromises);
-    const successful = results.filter(r => r.status === 'fulfilled').length;
-    const failed = results.filter(r => r.status === 'rejected').length;
-    
-    console.info(`📊 Event broadcast results: ${successful} successful, ${failed} failed`);
-    console.info(`🎉 Event processing completed for ${event['detail-type']} event`);
+    await Promise.allSettled(sendPromises);
 
   } catch (error) {
     console.error('Error processing WebSocket event:', error);

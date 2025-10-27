@@ -6,8 +6,6 @@ const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  console.log('WebSocket Disconnect event:', JSON.stringify(event, null, 2));
-
   const connectionId = event.requestContext.connectionId;
 
   if (!connectionId) {
@@ -25,8 +23,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         connectionId,
       },
     }));
-
-    console.log(`WebSocket connection closed: ${connectionId}`);
 
     return {
       statusCode: 200,

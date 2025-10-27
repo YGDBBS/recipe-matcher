@@ -1,12 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  console.log('WebSocket Default event:', JSON.stringify(event, null, 2));
-
   const connectionId = event.requestContext.connectionId;
   const routeKey = event.requestContext.routeKey;
-
-  console.log(`WebSocket message received on route: ${routeKey} for connection: ${connectionId}`);
 
   // Handle different message types
   switch (routeKey) {
@@ -14,7 +10,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       // Handle general messages
       try {
         const body = event.body ? JSON.parse(event.body) : {};
-        console.log('Message body:', body);
         
         // Echo the message back to the client
         return {
@@ -49,7 +44,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       };
     
     default:
-      console.log(`Unknown route: ${routeKey}`);
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Unknown route' }),

@@ -2,21 +2,19 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcryptjs';
-import { EventPublisher } from '../utils/event-publisher';
 import { getUserIdFromEvent } from '../helpers/authorizer-helper';
 
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
 const secretsManager = new SecretsManagerClient({});
+const eventBridge = new EventBridgeClient({});
 
 // JWT secret - retrieved from AWS Secrets Manager
 let cachedJwtSecret: string | null = null;
 const JWT_EXPIRES_IN = '7d';
-
-// Event publisher
-const eventPublisher = new EventPublisher(process.env.EVENT_BUS_NAME || 'recipe-matcher-events');
 
 // Function to get JWT secret from Secrets Manager with caching
 async function getJwtSecret(): Promise<string> {
@@ -298,15 +296,22 @@ async function registerUser(userData: RegisterRequest): Promise<APIGatewayProxyR
 
     // Publish UserRegistered event
     try {
-      await eventPublisher.publishUserRegistered({
-        userId: user.userId,
-        email: user.email,
-        username: user.username,
-        timestamp: user.createdAt,
-        metadata: {
-          registrationSource: 'web',
-        },
-      });
+      await eventBridge.send(new PutEventsCommand({
+        Entries: [{
+          Source: 'recipe-matcher.user',
+          DetailType: 'UserRegistered',
+          Detail: JSON.stringify({
+            userId: user.userId,
+            email: user.email,
+            username: user.username,
+            timestamp: user.createdAt,
+            metadata: {
+              registrationSource: 'web',
+            },
+          }),
+          EventBusName: process.env.EVENT_BUS_NAME || 'recipe-matcher-events',
+        }],
+      }));
     } catch (error) {
       console.error('Error publishing UserRegistered event:', error);
       // Don't fail registration if event publishing fails

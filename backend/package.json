@@ -15,7 +15,6 @@
     "destroy": "cdk destroy",
     "synth": "cdk synth",
     "diff": "cdk diff",
-    "import-recipes": "ts-node src/scripts/spoonacular-importer.ts",
     "clear-recipes": "ts-node src/scripts/clear-recipes.ts"
   },
   "keywords": [

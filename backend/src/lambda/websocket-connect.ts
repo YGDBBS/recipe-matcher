@@ -6,14 +6,8 @@ const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  console.info('🔌 WebSocket Connect event received');
-  console.info('📅 Connection timestamp:', new Date().toISOString());
-
   const connectionId = event.requestContext.connectionId;
   const userId = event.queryStringParameters?.userId || 'anonymous';
-  
-  console.info(`🆔 Connection ID: ${connectionId}`);
-  console.info(`👤 User ID: ${userId}`);
 
   if (!connectionId) {
     return {
@@ -33,9 +27,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         ttl: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours TTL
       },
     }));
-
-    console.info(`✅ WebSocket connection established: ${connectionId} for user: ${userId}`);
-    console.info('🎉 Connection stored in DynamoDB successfully');
 
     return {
       statusCode: 200,

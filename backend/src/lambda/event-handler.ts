@@ -13,8 +13,6 @@ const MATCHES_TABLE = process.env.MATCHES_TABLE!;
 const NOTIFICATIONS_TOPIC_ARN = process.env.NOTIFICATIONS_TOPIC_ARN!;
 
 export const handler = async (event: EventBridgeEvent<string, any>) => {
-  console.log('Event received:', JSON.stringify(event, null, 2));
-
   try {
     const { 'detail-type': detailType, source, detail } = event;
 
@@ -56,7 +54,7 @@ export const handler = async (event: EventBridgeEvent<string, any>) => {
         break;
       
       default:
-        console.log('Unknown event type:', detailType);
+        console.error('Unknown event type:', detailType);
     }
 
     return {
@@ -70,8 +68,6 @@ export const handler = async (event: EventBridgeEvent<string, any>) => {
 };
 
 async function handleUserRegistered(detail: any) {
-  console.log('Processing UserRegistered event:', detail);
-  
   // Send welcome notification
   await sendNotification({
     userId: detail.userId,
@@ -86,8 +82,6 @@ async function handleUserRegistered(detail: any) {
 }
 
 async function handleUserProfileUpdated(detail: any) {
-  console.log('Processing UserProfileUpdated event:', detail);
-  
   // Update user preferences in database
   await docClient.send(new UpdateCommand({
     TableName: USERS_TABLE,
@@ -102,23 +96,17 @@ async function handleUserProfileUpdated(detail: any) {
   // Trigger recipe re-matching if dietary restrictions changed
   if (detail.changes.dietaryRestrictions) {
     // This would trigger a re-matching process
-    console.log('Dietary restrictions updated, triggering re-matching');
   }
 }
 
 async function handleUserIngredientsUpdated(detail: any) {
-  console.log('Processing UserIngredientsUpdated event:', detail);
-  
   // Trigger recipe matching for new ingredients
   if (detail.ingredients.added && detail.ingredients.added.length > 0) {
-    console.log('New ingredients added, triggering recipe matching');
     // This would trigger the matching algorithm
   }
 }
 
 async function handleRecipeCreated(detail: any) {
-  console.log('Processing RecipeCreated event:', detail);
-  
   // Update recipe analytics
   await updateRecipeAnalytics(detail.recipeId, 'created');
   
@@ -127,18 +115,13 @@ async function handleRecipeCreated(detail: any) {
 }
 
 async function handleRecipeUpdated(detail: any) {
-  console.log('Processing RecipeUpdated event:', detail);
-  
   // Update recipe analytics
   await updateRecipeAnalytics(detail.recipeId, 'updated');
   
   // Trigger re-matching for users who have this recipe saved
-  console.log('Recipe updated, triggering re-matching for saved users');
 }
 
 async function handleRecipeRated(detail: any) {
-  console.log('Processing RecipeRated event:', detail);
-  
   // Update recipe rating in database
   await docClient.send(new UpdateCommand({
     TableName: RECIPES_TABLE,
@@ -159,8 +142,6 @@ async function handleRecipeRated(detail: any) {
 }
 
 async function handleRecipeShared(detail: any) {
-  console.log('Processing RecipeShared event:', detail);
-  
   // Send notification to recipient if shared to specific user
   if (detail.toUserId) {
     await sendNotification({
@@ -177,8 +158,6 @@ async function handleRecipeShared(detail: any) {
 }
 
 async function handleRecipeMatched(detail: any) {
-  console.log('Processing RecipeMatched event:', detail);
-  
   // Store match in database
   await docClient.send(new UpdateCommand({
     TableName: MATCHES_TABLE,
@@ -213,8 +192,6 @@ async function handleRecipeMatched(detail: any) {
 }
 
 async function handleMatchPercentageUpdated(detail: any) {
-  console.log('Processing MatchPercentageUpdated event:', detail);
-  
   // Update match in database
   await docClient.send(new UpdateCommand({
     TableName: MATCHES_TABLE,
@@ -255,8 +232,6 @@ async function sendNotification(notification: {
         },
       },
     }));
-    
-    console.log('Notification sent:', notification);
   } catch (error) {
     console.error('Error sending notification:', error);
   }
@@ -264,15 +239,12 @@ async function sendNotification(notification: {
 
 async function updateUserAnalytics(userId: string, action: string) {
   // This would update user analytics in a separate analytics table
-  console.log(`User analytics updated: ${userId} - ${action}`);
 }
 
 async function updateRecipeAnalytics(recipeId: string, action: string) {
   // This would update recipe analytics in a separate analytics table
-  console.log(`Recipe analytics updated: ${recipeId} - ${action}`);
 }
 
 async function notifyInterestedUsers(recipeDetail: any) {
   // This would find users who might be interested in this recipe based on their ingredients
-  console.log('Notifying interested users for recipe:', recipeDetail.recipeId);
 }

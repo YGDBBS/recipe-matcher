@@ -103,16 +103,12 @@ async function findMatchingRecipes(
       limit = 20 
     } = requestBody;
 
-    console.log(`🔍 Finding recipes for user ${userId} with ingredients: [${userIngredients.join(', ')}]`);
-
     // Use the new fuzzy matching system
     const matches = await ingredientMatcher.findMatchingRecipes(userIngredients, {
       minMatchPercentage,
       maxResults: limit,
       includePartialMatches: true
     });
-
-    console.log(`✅ Found ${matches.length} matching recipes`);
 
     // Apply additional filters
     let filteredMatches = matches;
@@ -366,7 +362,6 @@ async function saveMatches(userId: string, matches: RecipeMatch[]): Promise<void
     
     // Note: This would need to be updated to use the new single-table design
     // For now, we'll skip saving matches as the matches table was removed
-    console.log(`💾 Would save ${matches.length} matches for user ${userId} at ${timestamp}`);
     
     // TODO: Implement match saving in single-table design
     // This could be stored as:

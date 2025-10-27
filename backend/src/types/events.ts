@@ -174,8 +174,3 @@ export type RecipeMatcherEvent =
   | RecipeMatchedEvent
   | MatchPercentageUpdatedEvent
   | NotificationSentEvent;
-
-// Event publishing helper
-export interface EventPublisher {
-  publishEvent<T extends RecipeMatcherEvent>(event: Omit<T, 'version' | 'id' | 'account' | 'time' | 'region' | 'resources'>): Promise<void>;
-}

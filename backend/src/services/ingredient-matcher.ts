@@ -49,11 +49,8 @@ export class IngredientMatcher {
       maxResults = 20
     } = options;
 
-    console.log(`🔍 Finding recipes for ingredients: [${userIngredients.join(', ')}]`);
-
     // Step 1: Get all unique recipes from the database
     const allRecipes = await this.getAllRecipes();
-    console.log(`📚 Found ${allRecipes.length} total recipes`);
 
     // Step 2: Calculate match scores for each recipe
     const recipeMatches: RecipeMatch[] = [];
@@ -71,7 +68,6 @@ export class IngredientMatcher {
       .sort((a, b) => b.matchPercentage - a.matchPercentage)
       .slice(0, maxResults);
 
-    console.log(`✅ Found ${sortedMatches.length} matching recipes`);
     return sortedMatches;
   }
 

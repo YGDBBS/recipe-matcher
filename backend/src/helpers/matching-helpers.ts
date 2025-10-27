@@ -1,6 +1,6 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { response } from '../utils/response';
 
 const dynamoClient = new DynamoDBClient({});
@@ -94,13 +94,9 @@ export async function findMatchingRecipes(requestBody: any, userId: string | und
     }));
 
     const allItems = recipesResult.Items || [];
-    console.log('Total items in table:', allItems.length);
-    console.log('Sample items:', allItems.slice(0, 3));
     
     // Filter for actual recipe records (those with title and ingredients)
     const allRecipes = allItems.filter(item => item.title && item.ingredients);
-    console.log('Found recipes:', allRecipes.length);
-    console.log('Sample recipe:', allRecipes[0]);
     
     // Calculate matches for each recipe
     const recipeMatches: RecipeMatch[] = [];
