@@ -2,7 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import IngredientMatcher, { RecipeMatch } from '../services/ingredient-matcher';
-import { extractUserIdFromToken } from '../helpers/auth-helpers';
+import { getUserIdFromEvent } from '../helpers/authorizer-helper';
 
 const ingredientMatcher = new IngredientMatcher();
 
@@ -37,6 +37,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
   try {
     const { httpMethod, path, body } = event;
+    const userId = getUserIdFromEvent(event);
 
     if (httpMethod === 'OPTIONS') {
       return {
@@ -48,7 +49,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     if (path === '/matching-v2/find-recipes' && httpMethod === 'POST') {
       const requestBody = body ? JSON.parse(body) : {};
-      return await findMatchingRecipes(requestBody, event.headers.Authorization);
+      return await findMatchingRecipes(requestBody, userId);
     }
 
     if (path === '/matching-v2/calculate-match' && httpMethod === 'POST') {
@@ -78,7 +79,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 async function findMatchingRecipes(
   requestBody: MatchingRequest, 
-  authorization?: string
+  userId?: string
 ): Promise<APIGatewayProxyResult> {
   const headers = {
     'Content-Type': 'application/json',
@@ -86,20 +87,11 @@ async function findMatchingRecipes(
   };
 
   try {
-    if (!authorization) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: 'Authorization required' }),
-      };
-    }
-
-    const userId = await extractUserIdFromToken(authorization);
     if (!userId) {
       return {
         statusCode: 401,
         headers,
-        body: JSON.stringify({ error: 'Invalid authorization token' }),
+        body: JSON.stringify({ error: 'Authorization required' }),
       };
     }
     const { 
