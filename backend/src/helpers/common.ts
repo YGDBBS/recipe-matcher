@@ -4,15 +4,6 @@ export function generateId(): string {
   return Math.random().toString(36).substr(2, 9);
 }
 
-export function extractUserIdFromToken(authorization: string): string | null {
-  if (!authorization) return null;
-  
-  const token = authorization.replace('Bearer ', '');
-  // TODO: Implement proper JWT token validation and extraction
-  // For now, return the token as-is (this is a placeholder)
-  return token;
-}
-
 export function getCorsHeaders() {
   return {
     'Content-Type': 'application/json',
