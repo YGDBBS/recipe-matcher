@@ -32,7 +32,10 @@ async function getJwtSecret(): Promise<string> {
 export const handler = async (event: any): Promise<APIGatewayAuthorizerResult> => {
   console.log('Full authorizer event:', JSON.stringify(event, null, 2));
   
-  const { authorizationToken, methodArn } = event;
+  const methodArn = event.methodArn;
+  const authorizationToken = event.authorizationToken || 
+    (event.headers && event.headers.Authorization) ||
+    (event.headers && event.headers.authorization);
   const httpMethod = event.httpMethod || event.requestContext?.httpMethod;
   
   console.log('Authorizer event received, httpMethod:', httpMethod);
