@@ -27,21 +27,21 @@ jobs:
         working-directory: ./frontend
         run: npm run lint
 
+      - name: Install dependencies (backend)
+        working-directory: ./backend
+        run: npm ci
+
       - name: Run tests (frontend)
         working-directory: ./frontend
-        run: npm run test:run
+        run: npm test -- run
 
       - name: Run tests (backend)
         working-directory: ./backend
-        run: npm run test:ci
+        run: npm test -- --ci --coverage --watchAll=false
 
       - name: Build frontend
         working-directory: ./frontend
         run: npm run build
-
-      - name: Install dependencies (CDK)
-        working-directory: ./backend
-        run: npm ci
 
       - name: Synth CDK stack
         working-directory: ./backend
