@@ -11,6 +11,9 @@ module.exports = {
     '/node_modules/',
     '/__tests__/setup.ts'
   ],
+  modulePathIgnorePatterns: [
+    '<rootDir>/node_modules'
+  ],
   transform: {
     '^.+\\.ts$': ['ts-jest', {
       useESM: true
