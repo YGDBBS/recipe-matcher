@@ -55,7 +55,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     if (path === '/recipes' && httpMethod === 'POST') {
-      return await createRecipe(body, event.headers.Authorization);
+      return await createRecipe(body, userId);
     }
 
     if (pathParameters?.id && httpMethod === 'GET') {
@@ -63,11 +63,11 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     if (pathParameters?.id && httpMethod === 'PUT') {
-      return await updateRecipe(pathParameters.id, body, event.headers.Authorization);
+      return await updateRecipe(pathParameters.id, body, userId);
     }
 
     if (pathParameters?.id && httpMethod === 'DELETE') {
-      return await deleteRecipe(pathParameters.id, event.headers.Authorization);
+      return await deleteRecipe(pathParameters.id, userId);
     }
 
     return {
@@ -145,22 +145,20 @@ async function getRecipes(queryParams: any): Promise<APIGatewayProxyResult> {
   }
 }
 
-async function createRecipe(recipeData: any, authorization?: string): Promise<APIGatewayProxyResult> {
+async function createRecipe(recipeData: any, userId?: string): Promise<APIGatewayProxyResult> {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
   };
 
   try {
-    if (!authorization) {
+    if (!userId) {
       return {
         statusCode: 401,
         headers,
         body: JSON.stringify({ error: 'Authorization required' }),
       };
     }
-
-    const userId = extractUserIdFromToken(authorization);
     const recipeId = generateId();
     const now = new Date().toISOString();
 
@@ -247,22 +245,20 @@ async function getRecipe(recipeId: string): Promise<APIGatewayProxyResult> {
   }
 }
 
-async function updateRecipe(recipeId: string, recipeData: any, authorization?: string): Promise<APIGatewayProxyResult> {
+async function updateRecipe(recipeId: string, recipeData: any, userId?: string): Promise<APIGatewayProxyResult> {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
   };
 
   try {
-    if (!authorization) {
+    if (!userId) {
       return {
         statusCode: 401,
         headers,
         body: JSON.stringify({ error: 'Authorization required' }),
       };
     }
-
-    const userId = extractUserIdFromToken(authorization);
 
     // Get existing recipe
     const existingRecipe = await docClient.send(new GetCommand({
@@ -313,22 +309,20 @@ async function updateRecipe(recipeId: string, recipeData: any, authorization?: s
   }
 }
 
-async function deleteRecipe(recipeId: string, authorization?: string): Promise<APIGatewayProxyResult> {
+async function deleteRecipe(recipeId: string, userId?: string): Promise<APIGatewayProxyResult> {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
   };
 
   try {
-    if (!authorization) {
+    if (!userId) {
       return {
         statusCode: 401,
         headers,
         body: JSON.stringify({ error: 'Authorization required' }),
       };
     }
-
-    const userId = extractUserIdFromToken(authorization);
 
     // Get existing recipe to check ownership
     const existingRecipe = await docClient.send(new GetCommand({
@@ -377,7 +371,3 @@ function generateId(): string {
   return Math.random().toString(36).substr(2, 9);
 }
 
-function extractUserIdFromToken(authorization: string): string {
-  const token = authorization.replace('Bearer ', '');
-  return token;
-}
