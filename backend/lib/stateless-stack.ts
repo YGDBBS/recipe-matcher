@@ -387,7 +387,7 @@ export class StatelessStack extends cdk.Stack {
     const authorizer = new apigateway.RequestAuthorizer(this, 'Authorizer', {
       handler: authorizerLambda,
       identitySources: [apigateway.IdentitySource.header('Authorization')],
-      resultsCacheTtl: cdk.Duration.seconds(0), // Disable cache for debugging
+      resultsCacheTtl: cdk.Duration.minutes(5),
     });
 
     // Auth endpoints
