@@ -392,15 +392,35 @@ export class StatelessStack extends cdk.Stack {
 
     // Auth endpoints
     const authResource = api.root.addResource('auth');
+    authResource.addCorsPreflight({
+      allowOrigins: apigateway.Cors.ALL_ORIGINS,
+      allowMethods: ['POST', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+    });
     authResource.addMethod('POST', new apigateway.LambdaIntegration(authLambda));
     
     const loginResource = authResource.addResource('login');
+    loginResource.addCorsPreflight({
+      allowOrigins: apigateway.Cors.ALL_ORIGINS,
+      allowMethods: ['POST', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+    });
     loginResource.addMethod('POST', new apigateway.LambdaIntegration(authLambda));
     
     const registerResource = authResource.addResource('register');
+    registerResource.addCorsPreflight({
+      allowOrigins: apigateway.Cors.ALL_ORIGINS,
+      allowMethods: ['POST', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+    });
     registerResource.addMethod('POST', new apigateway.LambdaIntegration(authLambda));
     
     const verifyResource = authResource.addResource('verify');
+    verifyResource.addCorsPreflight({
+      allowOrigins: apigateway.Cors.ALL_ORIGINS,
+      allowMethods: ['POST', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+    });
     verifyResource.addMethod('POST', new apigateway.LambdaIntegration(authLambda));
     
     const profileResource = authResource.addResource('profile');
