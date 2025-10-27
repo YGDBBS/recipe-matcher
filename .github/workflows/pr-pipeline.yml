@@ -80,7 +80,7 @@ jobs:
 
       - name: Run unit tests
         working-directory: ./backend
-        run: npm run test:ci
+        run: npm test -- --ci --coverage --watchAll=false
         continue-on-error: true
 
       - name: Build application
@@ -236,7 +236,7 @@ jobs:
 
       - name: Run tests with coverage (backend)
         working-directory: ./backend
-        run: npm run test:coverage
+        run: npm test -- --coverage
         continue-on-error: true
 
   # Summary
