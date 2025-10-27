@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom'
+import { afterEach } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import { vi } from 'vitest'
 
@@ -8,8 +9,10 @@ afterEach(() => {
 })
 
 // Mock WebSocket
-(global as any).WebSocket = vi.fn() as any
+Object.assign(globalThis, { WebSocket: vi.fn() })
 
 // Mock Speech Recognition API
-(global as any).SpeechRecognition = vi.fn() as any
-(global as any).webkitSpeechRecognition = vi.fn() as any
+Object.assign(globalThis, { 
+  SpeechRecognition: vi.fn(),
+  webkitSpeechRecognition: vi.fn() 
+})
