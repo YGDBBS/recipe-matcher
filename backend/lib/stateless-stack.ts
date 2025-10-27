@@ -381,11 +381,6 @@ export class StatelessStack extends cdk.Stack {
     const api = new apigateway.RestApi(this, 'RecipeMatcherApi', {
       restApiName: 'Recipe Matcher API',
       description: 'API for Recipe Matcher application',
-      defaultCorsPreflightOptions: {
-        allowOrigins: apigateway.Cors.ALL_ORIGINS,
-        allowMethods: apigateway.Cors.ALL_METHODS,
-        allowHeaders: ['Content-Type', 'Authorization'],
-      },
     });
 
     // Authorizer
@@ -409,15 +404,30 @@ export class StatelessStack extends cdk.Stack {
     verifyResource.addMethod('POST', new apigateway.LambdaIntegration(authLambda));
     
     const profileResource = authResource.addResource('profile');
+    profileResource.addCorsPreflight({
+      allowOrigins: apigateway.Cors.ALL_ORIGINS,
+      allowMethods: ['GET', 'PUT', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+    });
     profileResource.addMethod('GET', new apigateway.LambdaIntegration(authLambda), { authorizer });
     profileResource.addMethod('PUT', new apigateway.LambdaIntegration(authLambda), { authorizer });
 
     // Recipes endpoints
     const recipesResource = api.root.addResource('recipes');
+    recipesResource.addCorsPreflight({
+      allowOrigins: apigateway.Cors.ALL_ORIGINS,
+      allowMethods: ['GET', 'POST', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+    });
     recipesResource.addMethod('GET', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
     recipesResource.addMethod('POST', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
     
     const recipeResource = recipesResource.addResource('{id}');
+    recipeResource.addCorsPreflight({
+      allowOrigins: apigateway.Cors.ALL_ORIGINS,
+      allowMethods: ['GET', 'PUT', 'DELETE', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+    });
     recipeResource.addMethod('GET', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
     recipeResource.addMethod('PUT', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
     recipeResource.addMethod('DELETE', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
@@ -428,23 +438,48 @@ export class StatelessStack extends cdk.Stack {
     ingredientsResource.addMethod('POST', new apigateway.LambdaIntegration(ingredientsLambda));
 
     const userIngredientsResource = api.root.addResource('user-ingredients');
+    userIngredientsResource.addCorsPreflight({
+      allowOrigins: apigateway.Cors.ALL_ORIGINS,
+      allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+    });
     userIngredientsResource.addMethod('GET', new apigateway.LambdaIntegration(ingredientsLambda), { authorizer });
     userIngredientsResource.addMethod('POST', new apigateway.LambdaIntegration(ingredientsLambda), { authorizer });
     userIngredientsResource.addMethod('DELETE', new apigateway.LambdaIntegration(ingredientsLambda), { authorizer });
 
     // Matching endpoints
     const matchingResource = api.root.addResource('matching');
+    matchingResource.addCorsPreflight({
+      allowOrigins: apigateway.Cors.ALL_ORIGINS,
+      allowMethods: ['POST', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+    });
     matchingResource.addMethod('POST', new apigateway.LambdaIntegration(matchingLambda), { authorizer });
 
     // Matching v2 endpoints (Enhanced fuzzy matching)
     const matchingV2Resource = api.root.addResource('matching-v2');
     const findRecipesResource = matchingV2Resource.addResource('find-recipes');
+    findRecipesResource.addCorsPreflight({
+      allowOrigins: apigateway.Cors.ALL_ORIGINS,
+      allowMethods: ['POST', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+    });
     findRecipesResource.addMethod('POST', new apigateway.LambdaIntegration(matchingV2Lambda), { authorizer });
     
     const calculateMatchResource = matchingV2Resource.addResource('calculate-match');
+    calculateMatchResource.addCorsPreflight({
+      allowOrigins: apigateway.Cors.ALL_ORIGINS,
+      allowMethods: ['POST', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+    });
     calculateMatchResource.addMethod('POST', new apigateway.LambdaIntegration(matchingV2Lambda), { authorizer });
     
     const ingredientAnalysisResource = matchingV2Resource.addResource('ingredient-analysis');
+    ingredientAnalysisResource.addCorsPreflight({
+      allowOrigins: apigateway.Cors.ALL_ORIGINS,
+      allowMethods: ['POST', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+    });
     ingredientAnalysisResource.addMethod('POST', new apigateway.LambdaIntegration(matchingV2Lambda), { authorizer });
 
     // Outputs
