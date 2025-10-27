@@ -21,7 +21,7 @@ vi.mock('@mui/icons-material', () => {
   const createIconMock = (name: string) => () => <div data-testid={`${name.toLowerCase()}-icon`} />
   
   return new Proxy({}, {
-    get: (target, prop) => {
+    get: (_target, prop) => {
       if (typeof prop === 'string') {
         return createIconMock(prop)
       }
