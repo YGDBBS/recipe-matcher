@@ -135,6 +135,10 @@ jobs:
   security-scan:
     runs-on: ubuntu-latest
     name: Security Scan
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
     
     steps:
       - name: Checkout repository
