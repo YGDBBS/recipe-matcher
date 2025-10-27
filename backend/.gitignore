@@ -13,6 +13,7 @@ dist/
 *.d.ts
 !test-*.js
 !check-*.js
+!eslint.config.js
 
 # Environment variables
 .env
