@@ -1,7 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand, PutCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
-import { generateId, extractUserIdFromToken, getCorsHeaders, createErrorResponse, createSuccessResponse } from '../helpers/common';
+import { generateId, getCorsHeaders, createErrorResponse, createSuccessResponse } from '../helpers/common';
+import { getUserIdFromEvent } from '../helpers/authorizer-helper';
 
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
@@ -19,6 +20,7 @@ interface UserIngredient {
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
     const { httpMethod, queryStringParameters } = event;
+    const userId = getUserIdFromEvent(event);
 
     if (httpMethod === 'OPTIONS') {
       return {
@@ -29,17 +31,17 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     if (httpMethod === 'GET') {
-      return await getUserIngredients(event.headers.Authorization, queryStringParameters);
+      return await getUserIngredients(userId, queryStringParameters);
     }
 
     if (httpMethod === 'POST') {
       const body = event.body ? JSON.parse(event.body) : {};
-      return await addUserIngredient(body, event.headers.Authorization);
+      return await addUserIngredient(body, userId);
     }
 
     if (httpMethod === 'DELETE') {
       const body = event.body ? JSON.parse(event.body) : {};
-      return await removeUserIngredient(body, event.headers.Authorization);
+      return await removeUserIngredient(body, userId);
     }
 
     return createErrorResponse(404, 'Not found');
@@ -48,15 +50,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   }
 };
 
-async function getUserIngredients(authorization?: string, queryParams?: any): Promise<APIGatewayProxyResult> {
+async function getUserIngredients(userId?: string, queryParams?: any): Promise<APIGatewayProxyResult> {
   try {
-    if (!authorization) {
-      return createErrorResponse(401, 'Authorization required');
-    }
-
-    const userId = extractUserIdFromToken(authorization);
     if (!userId) {
-      return createErrorResponse(401, 'Invalid token');
+      return createErrorResponse(401, 'Authorization required');
     }
 
     const { limit = '50' } = queryParams || {};
@@ -77,15 +74,10 @@ async function getUserIngredients(authorization?: string, queryParams?: any): Pr
   }
 }
 
-async function addUserIngredient(ingredientData: any, authorization?: string): Promise<APIGatewayProxyResult> {
+async function addUserIngredient(ingredientData: any, userId?: string): Promise<APIGatewayProxyResult> {
   try {
-    if (!authorization) {
-      return createErrorResponse(401, 'Authorization required');
-    }
-
-    const userId = extractUserIdFromToken(authorization);
     if (!userId) {
-      return createErrorResponse(401, 'Invalid token');
+      return createErrorResponse(401, 'Authorization required');
     }
 
     const now = new Date().toISOString();
@@ -111,15 +103,10 @@ async function addUserIngredient(ingredientData: any, authorization?: string): P
   }
 }
 
-async function removeUserIngredient(ingredientData: any, authorization?: string): Promise<APIGatewayProxyResult> {
+async function removeUserIngredient(ingredientData: any, userId?: string): Promise<APIGatewayProxyResult> {
   try {
-    if (!authorization) {
-      return createErrorResponse(401, 'Authorization required');
-    }
-
-    const userId = extractUserIdFromToken(authorization);
     if (!userId) {
-      return createErrorResponse(401, 'Invalid token');
+      return createErrorResponse(401, 'Authorization required');
     }
 
     const { ingredientId } = ingredientData;
