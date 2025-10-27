@@ -5,6 +5,7 @@ import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-sec
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcryptjs';
 import { EventPublisher } from '../utils/event-publisher';
+import { getUserIdFromEvent } from '../helpers/authorizer-helper';
 
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
@@ -123,11 +124,13 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     if (path === '/auth/profile' && httpMethod === 'GET') {
-      return await getUserProfile(event.headers.Authorization);
+      const userId = getUserIdFromEvent(event);
+      return await getUserProfile(userId);
     }
 
     if (path === '/auth/profile' && httpMethod === 'PUT') {
-      return await updateUserProfile(event.headers.Authorization, body);
+      const userId = getUserIdFromEvent(event);
+      return await updateUserProfile(userId, body);
     }
 
     if (path === '/auth/verify' && httpMethod === 'POST') {
@@ -330,27 +333,18 @@ async function registerUser(userData: RegisterRequest): Promise<APIGatewayProxyR
   }
 }
 
-async function getUserProfile(authorization?: string): Promise<APIGatewayProxyResult> {
+async function getUserProfile(userId?: string): Promise<APIGatewayProxyResult> {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
   };
 
   try {
-    if (!authorization) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: 'Authorization required' }),
-      };
-    }
-
-    const userId = await extractUserIdFromToken(authorization);
     if (!userId) {
       return {
         statusCode: 401,
         headers,
-        body: JSON.stringify({ error: 'Invalid token' }),
+        body: JSON.stringify({ error: 'Authorization required' }),
       };
     }
     
@@ -368,7 +362,8 @@ async function getUserProfile(authorization?: string): Promise<APIGatewayProxyRe
     }
 
     // Remove password hash from response
-    const { passwordHash, ...userWithoutPassword } = result.Item as User;
+    const userWithoutPassword = { ...result.Item };
+    delete userWithoutPassword.passwordHash;
 
     return {
       statusCode: 200,
@@ -385,22 +380,20 @@ async function getUserProfile(authorization?: string): Promise<APIGatewayProxyRe
   }
 }
 
-async function updateUserProfile(authorization: string | undefined, userData: any): Promise<APIGatewayProxyResult> {
+async function updateUserProfile(userId: string | undefined, userData: any): Promise<APIGatewayProxyResult> {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
   };
 
   try {
-    if (!authorization) {
+    if (!userId) {
       return {
         statusCode: 401,
         headers,
         body: JSON.stringify({ error: 'Authorization required' }),
       };
     }
-
-    const userId = await extractUserIdFromToken(authorization);
     
     // Get existing user
     const existingUser = await docClient.send(new GetCommand({
@@ -445,18 +438,6 @@ async function updateUserProfile(authorization: string | undefined, userData: an
 
 function generateId(): string {
   return Math.random().toString(36).substr(2, 9);
-}
-
-async function extractUserIdFromToken(authorization: string): Promise<string | null> {
-  try {
-    const token = authorization.replace('Bearer ', '');
-    const jwtSecret = await getJwtSecret();
-    const decoded = jwt.verify(token, jwtSecret) as any;
-    return decoded.userId;
-  } catch (error) {
-    console.error('Token verification error:', error);
-    return null;
-  }
 }
 
 async function verifyToken(authorization?: string): Promise<APIGatewayProxyResult> {
