@@ -36,8 +36,11 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   };
 
   try {
-    const { httpMethod, path, pathParameters, queryStringParameters } = event;
+    const { httpMethod, path, pathParameters, queryStringParameters, requestContext } = event;
     const body = event.body ? JSON.parse(event.body) : {};
+    
+    // Get userId from authorizer context
+    const userId = requestContext.authorizer?.userId;
 
     if (httpMethod === 'OPTIONS') {
       return {
