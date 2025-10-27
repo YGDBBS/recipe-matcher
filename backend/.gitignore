@@ -14,7 +14,7 @@ dist/
 !test-*.js
 !check-*.js
 !eslint.config.js
-!jest.config.js
+!jest.config.cjs
 
 # Environment variables
 .env
