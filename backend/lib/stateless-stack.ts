@@ -21,33 +21,6 @@ export class StatelessStack extends cdk.Stack {
     super(scope, id, props);
     
     const { statefulStack } = props;
-    
-    // Helper method to add CORS options
-    const addCorsOptions = (resource: apigateway.IResource) => {
-      resource.addMethod('OPTIONS', new apigateway.MockIntegration({
-        integrationResponses: [{
-          statusCode: '200',
-          responseParameters: {
-            'method.response.header.Access-Control-Allow-Headers': "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'",
-            'method.response.header.Access-Control-Allow-Origin': "'*'",
-            'method.response.header.Access-Control-Allow-Methods': "'OPTIONS,GET,PUT,POST,DELETE'",
-          },
-        }],
-        passthroughBehavior: apigateway.PassthroughBehavior.NEVER,
-        requestTemplates: {
-          "application/json": "{\"statusCode\": 200}"
-        },
-      }), {
-        methodResponses: [{
-          statusCode: '200',
-          responseParameters: {
-            'method.response.header.Access-Control-Allow-Headers': true,
-            'method.response.header.Access-Control-Allow-Origin': true,
-            'method.response.header.Access-Control-Allow-Methods': true,
-          },
-        }]
-      });
-    };
 
     // S3 Bucket for recipe images
     const recipeImagesBucket = new s3.Bucket(this, 'RecipeImagesBucket', {
@@ -436,18 +409,15 @@ export class StatelessStack extends cdk.Stack {
     verifyResource.addMethod('POST', new apigateway.LambdaIntegration(authLambda));
     
     const profileResource = authResource.addResource('profile');
-    addCorsOptions(profileResource);
     profileResource.addMethod('GET', new apigateway.LambdaIntegration(authLambda), { authorizer });
     profileResource.addMethod('PUT', new apigateway.LambdaIntegration(authLambda), { authorizer });
 
     // Recipes endpoints
     const recipesResource = api.root.addResource('recipes');
-    addCorsOptions(recipesResource);
     recipesResource.addMethod('GET', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
     recipesResource.addMethod('POST', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
     
     const recipeResource = recipesResource.addResource('{id}');
-    addCorsOptions(recipeResource);
     recipeResource.addMethod('GET', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
     recipeResource.addMethod('PUT', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
     recipeResource.addMethod('DELETE', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
@@ -458,28 +428,23 @@ export class StatelessStack extends cdk.Stack {
     ingredientsResource.addMethod('POST', new apigateway.LambdaIntegration(ingredientsLambda));
 
     const userIngredientsResource = api.root.addResource('user-ingredients');
-    addCorsOptions(userIngredientsResource);
     userIngredientsResource.addMethod('GET', new apigateway.LambdaIntegration(ingredientsLambda), { authorizer });
     userIngredientsResource.addMethod('POST', new apigateway.LambdaIntegration(ingredientsLambda), { authorizer });
     userIngredientsResource.addMethod('DELETE', new apigateway.LambdaIntegration(ingredientsLambda), { authorizer });
 
     // Matching endpoints
     const matchingResource = api.root.addResource('matching');
-    addCorsOptions(matchingResource);
     matchingResource.addMethod('POST', new apigateway.LambdaIntegration(matchingLambda), { authorizer });
 
     // Matching v2 endpoints (Enhanced fuzzy matching)
     const matchingV2Resource = api.root.addResource('matching-v2');
     const findRecipesResource = matchingV2Resource.addResource('find-recipes');
-    addCorsOptions(findRecipesResource);
     findRecipesResource.addMethod('POST', new apigateway.LambdaIntegration(matchingV2Lambda), { authorizer });
     
     const calculateMatchResource = matchingV2Resource.addResource('calculate-match');
-    addCorsOptions(calculateMatchResource);
     calculateMatchResource.addMethod('POST', new apigateway.LambdaIntegration(matchingV2Lambda), { authorizer });
     
     const ingredientAnalysisResource = matchingV2Resource.addResource('ingredient-analysis');
-    addCorsOptions(ingredientAnalysisResource);
     ingredientAnalysisResource.addMethod('POST', new apigateway.LambdaIntegration(matchingV2Lambda), { authorizer });
 
     // Outputs
