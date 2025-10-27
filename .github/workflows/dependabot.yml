@@ -16,7 +16,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           target: minor
           merge-method: squash
-          ignore: |
+          exclude: |
             eslint
             @typescript-eslint
             typescript
