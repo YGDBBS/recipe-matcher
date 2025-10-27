@@ -455,19 +455,15 @@ async function verifyToken(authorization?: string): Promise<APIGatewayProxyResul
       };
     }
 
-    const userId = await extractUserIdFromToken(authorization);
-    if (!userId) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: 'Invalid token' }),
-      };
-    }
-
+    // Verify and decode the token
+    const token = authorization.replace('Bearer ', '');
+    const jwtSecret = await getJwtSecret();
+    const decoded = jwt.verify(token, jwtSecret) as { userId: string };
+    
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ valid: true, userId }),
+      body: JSON.stringify({ valid: true, userId: decoded.userId }),
     };
   } catch (error) {
     console.error('Token verification error:', error);
