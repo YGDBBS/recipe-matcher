@@ -248,6 +248,12 @@ const IngredientInput: React.FC = () => {
     try {
       const ingredientNames = state.userIngredients.map(ing => ing.name);
       
+      // Check if user is authenticated
+      if (!authState.isAuthenticated || !authState.token) {
+        setError('Please sign in to search for recipes');
+        return;
+      }
+
       // Use the new enhanced fuzzy matching API
       const matchRequest = {
         userIngredients: ingredientNames,
@@ -258,7 +264,7 @@ const IngredientInput: React.FC = () => {
         difficultyLevel: undefined, // No difficulty filter
       };
 
-      const matchResponse = await api.findMatchingRecipes(matchRequest, authState.token || '');
+      const matchResponse = await api.findMatchingRecipes(matchRequest, authState.token);
       
       if (matchResponse.error) {
         setError(`Failed to find matching recipes: ${matchResponse.error}`);
