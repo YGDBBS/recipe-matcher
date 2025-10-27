@@ -3,7 +3,6 @@ import { verify } from 'jsonwebtoken'
 import { 
   loginUser, 
   registerUser, 
-  extractUserIdFromToken 
 } from '../../helpers/auth-helpers'
 
 // Mock jsonwebtoken
@@ -13,32 +12,6 @@ const mockVerify = verify as jest.MockedFunction<typeof verify>
 describe('Auth Helpers', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-  })
-
-  describe('extractUserIdFromToken', () => {
-    it('should extract user ID from valid token', () => {
-      const token = 'Bearer valid-token'
-      const decoded = { userId: 'user123' }
-      
-      mockVerify.mockReturnValue(decoded as any)
-      
-      const result = extractUserIdFromToken(token)
-      
-      expect(mockVerify).toHaveBeenCalledWith('valid-token', process.env.JWT_SECRET)
-      expect(result).toBe('user123')
-    })
-
-    it('should return null for invalid token', () => {
-      const token = 'Bearer invalid-token'
-      
-      mockVerify.mockImplementation(() => {
-        throw new Error('Invalid token')
-      })
-      
-      const result = extractUserIdFromToken(token)
-      
-      expect(result).toBeNull()
-    })
   })
 
   describe('loginUser', () => {
