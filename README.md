@@ -129,7 +129,6 @@ The app supports voice input for adding ingredients:
 
 ## 📊 Data Sources
 
-- **Spoonacular API** - High-quality recipe data
 - **Demo Data** - Curated recipes for development
 - **User-Generated** - Future user-contributed recipes
 

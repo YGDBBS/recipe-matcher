@@ -138,13 +138,11 @@ class PantryService {
     }
     
     this.backendLoadInProgress = true;
-    console.log('Loading pantry from backend...');
     
     try {
       const result = await api.getUserIngredients(token);
       
       if (result.data?.userIngredients) {
-        console.log('Backend pantry loaded:', result.data.userIngredients.length, 'items');
         const backendItems: PantryItem[] = result.data.userIngredients.map(item => ({
           name: item.name,
           quantity: item.quantity,
@@ -160,7 +158,6 @@ class PantryService {
         const mergedItems = this.mergePantryItems(backendItems, localItems);
         
         this.saveToLocalStorage(mergedItems);
-        console.log('Pantry merged and saved to localStorage');
         return mergedItems;
       }
     } catch (error) {
