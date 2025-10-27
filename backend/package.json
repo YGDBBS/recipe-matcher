@@ -1,7 +1,6 @@
 {
   "name": "recipe-matcher-backend",
   "version": "1.0.0",
-  "type": "module",
   "main": "bin/recipe-matcher.js",
   "scripts": {
     "build": "tsc",
