@@ -153,6 +153,14 @@ export class StatelessStack extends cdk.Stack {
       handler: 'handler',
     });
 
+    // Authorizer Lambda
+    const authorizerLambda = new NodejsFunction(this, 'AuthorizerLambda', {
+      ...commonLambdaProps,
+      functionName: 'recipe-matcher-authorizer',
+      entry: 'src/lambda/authorizer.ts',
+      handler: 'handler',
+    });
+
     // Recipes Lambda
     const recipesLambda = new NodejsFunction(this, 'RecipesLambda', {
       ...commonLambdaProps,
@@ -296,6 +304,12 @@ export class StatelessStack extends cdk.Stack {
       resources: ['arn:aws:secretsmanager:eu-west-1:*:secret:recipe-matcher-jwt-secret*']
     }));
     
+    authorizerLambda.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['secretsmanager:GetSecretValue'],
+      resources: ['arn:aws:secretsmanager:eu-west-1:*:secret:recipe-matcher-jwt-secret*']
+    }));
+    
     matchingV2Lambda.addToRolePolicy(new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
       actions: ['secretsmanager:GetSecretValue'],
@@ -374,6 +388,13 @@ export class StatelessStack extends cdk.Stack {
       },
     });
 
+    // Authorizer
+    const authorizer = new apigateway.RequestAuthorizer(this, 'Authorizer', {
+      handler: authorizerLambda,
+      identitySources: [apigateway.IdentitySource.header('Authorization')],
+      resultsCacheTtl: cdk.Duration.minutes(5),
+    });
+
     // Auth endpoints
     const authResource = api.root.addResource('auth');
     authResource.addMethod('POST', new apigateway.LambdaIntegration(authLambda));
@@ -388,18 +409,18 @@ export class StatelessStack extends cdk.Stack {
     verifyResource.addMethod('POST', new apigateway.LambdaIntegration(authLambda));
     
     const profileResource = authResource.addResource('profile');
-    profileResource.addMethod('GET', new apigateway.LambdaIntegration(authLambda));
-    profileResource.addMethod('PUT', new apigateway.LambdaIntegration(authLambda));
+    profileResource.addMethod('GET', new apigateway.LambdaIntegration(authLambda), { authorizer });
+    profileResource.addMethod('PUT', new apigateway.LambdaIntegration(authLambda), { authorizer });
 
     // Recipes endpoints
     const recipesResource = api.root.addResource('recipes');
-    recipesResource.addMethod('GET', new apigateway.LambdaIntegration(recipesLambda));
-    recipesResource.addMethod('POST', new apigateway.LambdaIntegration(recipesLambda));
+    recipesResource.addMethod('GET', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
+    recipesResource.addMethod('POST', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
     
     const recipeResource = recipesResource.addResource('{id}');
-    recipeResource.addMethod('GET', new apigateway.LambdaIntegration(recipesLambda));
-    recipeResource.addMethod('PUT', new apigateway.LambdaIntegration(recipesLambda));
-    recipeResource.addMethod('DELETE', new apigateway.LambdaIntegration(recipesLambda));
+    recipeResource.addMethod('GET', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
+    recipeResource.addMethod('PUT', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
+    recipeResource.addMethod('DELETE', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
 
     // Ingredients endpoints
     const ingredientsResource = api.root.addResource('ingredients');
@@ -407,24 +428,24 @@ export class StatelessStack extends cdk.Stack {
     ingredientsResource.addMethod('POST', new apigateway.LambdaIntegration(ingredientsLambda));
 
     const userIngredientsResource = api.root.addResource('user-ingredients');
-    userIngredientsResource.addMethod('GET', new apigateway.LambdaIntegration(ingredientsLambda));
-    userIngredientsResource.addMethod('POST', new apigateway.LambdaIntegration(ingredientsLambda));
-    userIngredientsResource.addMethod('DELETE', new apigateway.LambdaIntegration(ingredientsLambda));
+    userIngredientsResource.addMethod('GET', new apigateway.LambdaIntegration(ingredientsLambda), { authorizer });
+    userIngredientsResource.addMethod('POST', new apigateway.LambdaIntegration(ingredientsLambda), { authorizer });
+    userIngredientsResource.addMethod('DELETE', new apigateway.LambdaIntegration(ingredientsLambda), { authorizer });
 
     // Matching endpoints
     const matchingResource = api.root.addResource('matching');
-    matchingResource.addMethod('POST', new apigateway.LambdaIntegration(matchingLambda));
+    matchingResource.addMethod('POST', new apigateway.LambdaIntegration(matchingLambda), { authorizer });
 
     // Matching v2 endpoints (Enhanced fuzzy matching)
     const matchingV2Resource = api.root.addResource('matching-v2');
     const findRecipesResource = matchingV2Resource.addResource('find-recipes');
-    findRecipesResource.addMethod('POST', new apigateway.LambdaIntegration(matchingV2Lambda));
+    findRecipesResource.addMethod('POST', new apigateway.LambdaIntegration(matchingV2Lambda), { authorizer });
     
     const calculateMatchResource = matchingV2Resource.addResource('calculate-match');
-    calculateMatchResource.addMethod('POST', new apigateway.LambdaIntegration(matchingV2Lambda));
+    calculateMatchResource.addMethod('POST', new apigateway.LambdaIntegration(matchingV2Lambda), { authorizer });
     
     const ingredientAnalysisResource = matchingV2Resource.addResource('ingredient-analysis');
-    ingredientAnalysisResource.addMethod('POST', new apigateway.LambdaIntegration(matchingV2Lambda));
+    ingredientAnalysisResource.addMethod('POST', new apigateway.LambdaIntegration(matchingV2Lambda), { authorizer });
 
     // Outputs
     new cdk.CfnOutput(this, 'ApiUrl', {
