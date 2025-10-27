@@ -1,13 +1,10 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { extractUserIdFromToken } from './auth-helpers';
 import { response } from '../utils/response';
 
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
-const s3Client = new S3Client({});
 
 export interface Recipe {
   recipeId: string;
@@ -33,7 +30,7 @@ export interface Recipe {
 
 export async function getRecipes(queryParams: any): Promise<APIGatewayProxyResult> {
   try {
-    const { ingredient, userId, limit = '20', lastKey } = queryParams || {};
+    const { ingredient, userId, limit = '20' } = queryParams || {};
 
     let recipes: Recipe[] = [];
 

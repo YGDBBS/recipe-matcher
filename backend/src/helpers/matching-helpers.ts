@@ -1,14 +1,12 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, QueryCommand, ScanCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { convertUnit, areUnitsCompatible } from '../utils/units';
-import { extractUserIdFromToken } from './auth-helpers';
+import { DynamoDBDocumentClient, ScanCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { response } from '../utils/response';
 
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
 
-export interface RecipeMatch {
+interface RecipeMatch {
   recipeId: string;
   title: string;
   description: string;
@@ -48,7 +46,7 @@ export interface UserIngredient {
   addedAt: string;
 }
 
-export async function findMatchingRecipes(requestBody: any, userId: string | undefined, headers: any): Promise<APIGatewayProxyResult> {
+export async function findMatchingRecipes(requestBody: any, userId: string | undefined, _headers: any): Promise<APIGatewayProxyResult> {
   try {
     // If no userId, work in local mode (no user ingredients from database)
     const isLocalMode = !userId;
@@ -170,7 +168,7 @@ export async function findMatchingRecipes(requestBody: any, userId: string | und
   }
 }
 
-export async function calculateMatchPercentage(requestBody: any, headers: any): Promise<APIGatewayProxyResult> {
+export async function calculateMatchPercentage(requestBody: any, _headers: any): Promise<APIGatewayProxyResult> {
   try {
     const { userIngredients, recipeIngredients } = requestBody;
 

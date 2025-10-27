@@ -36,7 +36,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     return createErrorResponse(404, 'Not found');
-  } catch (error) {
+  } catch (_error) {
     return createErrorResponse(500, 'Internal server error');
   }
 };

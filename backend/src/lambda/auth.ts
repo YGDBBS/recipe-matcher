@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcryptjs';
@@ -208,7 +208,7 @@ async function loginUser(loginData: LoginRequest): Promise<APIGatewayProxyResult
     );
 
     // Remove password hash from response
-    const { passwordHash, ...userWithoutPassword } = user;
+    const { passwordHash: _passwordHash, ...userWithoutPassword } = user;
 
     return {
       statusCode: 200,

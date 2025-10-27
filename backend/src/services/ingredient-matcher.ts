@@ -3,7 +3,6 @@ import { DynamoDBDocumentClient, QueryCommand, ScanCommand } from '@aws-sdk/lib-
 import { 
   normalizeIngredient, 
   generateIngredientVariations, 
-  findBestIngredientMatch,
   areIngredientsSimilar 
 } from '../utils/ingredient-normalizer';
 
@@ -47,8 +46,7 @@ export class IngredientMatcher {
   ): Promise<RecipeMatch[]> {
     const {
       minMatchPercentage = 50,
-      maxResults = 20,
-      includePartialMatches = true
+      maxResults = 20
     } = options;
 
     console.log(`🔍 Finding recipes for ingredients: [${userIngredients.join(', ')}]`);

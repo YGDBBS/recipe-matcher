@@ -1,4 +1,4 @@
-import IngredientMatcher, { RecipeMatch } from '../services/ingredient-matcher';
+import IngredientMatcher from '../services/ingredient-matcher';
 
 class FuzzyMatchingTester {
   private matcher: IngredientMatcher;

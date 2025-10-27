@@ -1,5 +1,4 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals'
-import { hash, compare } from 'bcryptjs'
 import { sign, verify } from 'jsonwebtoken'
 import { 
   loginUser, 
@@ -7,14 +6,8 @@ import {
   extractUserIdFromToken 
 } from '../../helpers/auth-helpers'
 
-// Mock bcryptjs
-jest.mock('bcryptjs')
-const mockHash = hash as jest.MockedFunction<typeof hash>
-const mockCompare = compare as jest.MockedFunction<typeof compare>
-
 // Mock jsonwebtoken
 jest.mock('jsonwebtoken')
-const mockSign = sign as jest.MockedFunction<typeof sign>
 const mockVerify = verify as jest.MockedFunction<typeof verify>
 
 describe('Auth Helpers', () => {

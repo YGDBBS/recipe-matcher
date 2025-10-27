@@ -43,7 +43,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     return createErrorResponse(404, 'Not found');
-  } catch (error) {
+  } catch (_error) {
     return createErrorResponse(500, 'Internal server error');
   }
 };
@@ -72,7 +72,7 @@ async function getUserIngredients(authorization?: string, queryParams?: any): Pr
 
     const userIngredients = result.Items as UserIngredient[] || [];
     return createSuccessResponse({ userIngredients });
-  } catch (error) {
+  } catch (_error) {
     return createErrorResponse(500, 'Failed to get user ingredients');
   }
 }
@@ -106,7 +106,7 @@ async function addUserIngredient(ingredientData: any, authorization?: string): P
     }));
 
     return createSuccessResponse({ userIngredient }, 201);
-  } catch (error) {
+  } catch (_error) {
     return createErrorResponse(400, 'Failed to add ingredient');
   }
 }
@@ -137,7 +137,7 @@ async function removeUserIngredient(ingredientData: any, authorization?: string)
     }));
 
     return createSuccessResponse({ message: 'Ingredient removed successfully' });
-  } catch (error) {
+  } catch (_error) {
     return createErrorResponse(500, 'Failed to remove ingredient');
   }
 }
