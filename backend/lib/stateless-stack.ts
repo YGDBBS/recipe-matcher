@@ -1,7 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
-import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
@@ -95,39 +94,6 @@ export class StatelessStack extends cdk.Stack {
     // Reference WebSocket connections table from stateful stack
     const connectionsTable = statefulStack.connectionsTable;
 
-    // Cognito User Pool
-    const userPool = new cognito.UserPool(this, 'RecipeMatcherUserPool', {
-      userPoolName: 'recipe-matcher-users',
-      selfSignUpEnabled: true,
-      signInAliases: {
-        email: true,
-        username: true,
-      },
-      standardAttributes: {
-        email: {
-          required: true,
-          mutable: true,
-        },
-      },
-      passwordPolicy: {
-        minLength: 8,
-        requireLowercase: true,
-        requireUppercase: true,
-        requireDigits: true,
-        requireSymbols: false,
-      },
-      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
-    });
-
-    const userPoolClient = new cognito.UserPoolClient(this, 'RecipeMatcherUserPoolClient', {
-      userPool,
-      authFlows: {
-        userPassword: true,
-        userSrp: true,
-      },
-      generateSecret: false,
-    });
-
     // Lambda Functions
     const commonLambdaProps = {
       runtime: lambda.Runtime.NODEJS_18_X,
@@ -137,8 +103,6 @@ export class StatelessStack extends cdk.Stack {
         RECIPES_TABLE_LEGACY: 'recipe-matcher-recipes', // Existing table
         CONNECTIONS_TABLE: connectionsTable.tableName,
         RECIPE_IMAGES_BUCKET: recipeImagesBucket.bucketName,
-        USER_POOL_ID: userPool.userPoolId,
-        USER_POOL_CLIENT_ID: userPoolClient.userPoolClientId,
         EVENT_BUS_NAME: eventBus.eventBusName,
         NOTIFICATIONS_TOPIC_ARN: notificationsTopic.topicArn,
         EVENT_PROCESSING_QUEUE_URL: eventProcessingQueue.queueUrl,
@@ -506,16 +470,6 @@ export class StatelessStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'ApiUrl', {
       value: api.url,
       description: 'API Gateway URL',
-    });
-
-    new cdk.CfnOutput(this, 'UserPoolId', {
-      value: userPool.userPoolId,
-      description: 'Cognito User Pool ID',
-    });
-
-    new cdk.CfnOutput(this, 'UserPoolClientId', {
-      value: userPoolClient.userPoolClientId,
-      description: 'Cognito User Pool Client ID',
     });
 
     new cdk.CfnOutput(this, 'RecipeImagesBucketName', {
