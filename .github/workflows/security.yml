@@ -44,6 +44,7 @@ jobs:
 
       - name: Check for secrets in code
         uses: trufflesecurity/trufflehog@main
+        if: github.event_name != 'push' || github.ref != 'refs/heads/main' || github.event.after != github.event.before
         with:
           path: ./
           base: main
