@@ -81,7 +81,7 @@ async function getIngredients(queryParams: any): Promise<APIGatewayProxyResult> 
     }
 
     return createSuccessResponse({ ingredients });
-  } catch (error) {
+  } catch (_error) {
     return createErrorResponse(500, 'Failed to get ingredients');
   }
 }

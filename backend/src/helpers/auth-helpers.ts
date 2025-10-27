@@ -123,7 +123,7 @@ export async function loginUser(loginData: LoginRequest, headers: any): Promise<
     );
 
     // Remove password hash from response
-    const { passwordHash, ...userWithoutPassword } = user;
+    const { passwordHash: _passwordHash, ...userWithoutPassword } = user;
 
     return {
       statusCode: 200,
