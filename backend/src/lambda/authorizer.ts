@@ -30,12 +30,28 @@ async function getJwtSecret(): Promise<string> {
 }
 
 export const handler = async (event: any): Promise<APIGatewayAuthorizerResult> => {
-  const { authorizationToken, methodArn } = event;
+  const { authorizationToken, methodArn, httpMethod } = event;
 
   console.log('Authorizer event:', JSON.stringify(event, null, 2));
 
-  if (!authorizationToken) {
-    throw new Error('Unauthorized');
+  // Allow OPTIONS requests to pass through for CORS preflight
+  if (httpMethod === 'OPTIONS' || !authorizationToken) {
+    return {
+      principalId: 'anonymous',
+      policyDocument: {
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Action: 'execute-api:Invoke',
+            Effect: 'Allow' as const,
+            Resource: methodArn
+          }
+        ]
+      },
+      context: {
+        userId: ''
+      }
+    };
   }
 
   try {
