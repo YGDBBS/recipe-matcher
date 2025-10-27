@@ -114,7 +114,23 @@ export const handler = async (event: any): Promise<APIGatewayAuthorizerResult> =
     };
   } catch (error) {
     console.error('Authorization error:', error);
-    throw new Error('Unauthorized');
+    // Return a deny policy instead of throwing
+    return {
+      principalId: 'unauthorized',
+      policyDocument: {
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Action: 'execute-api:Invoke',
+            Effect: 'Deny',
+            Resource: methodArn
+          }
+        ]
+      },
+      context: {
+        userId: ''
+      }
+    };
   }
 };
 
