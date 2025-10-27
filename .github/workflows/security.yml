@@ -44,9 +44,9 @@ jobs:
 
       - name: Check for secrets in code
         uses: trufflesecurity/trufflehog@main
-        if: github.event_name != 'push' || github.ref != 'refs/heads/main' || github.event.after != github.event.before
+        if: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.event.before != github.event.after) }}
         with:
           path: ./
-          base: main
-          head: HEAD
+          base: ${{ github.event.pull_request.base.sha || github.event.before }}
+          head: ${{ github.event.pull_request.head.sha || github.event.after }}
           extra_args: --debug --only-verified

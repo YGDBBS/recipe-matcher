@@ -124,7 +124,6 @@ export async function loginUser(loginData: LoginRequest, headers: any): Promise<
 
     // Remove password hash from response
     const userWithoutPassword = { ...user };
-    delete userWithoutPassword.passwordHash;
 
     return {
       statusCode: 200,
