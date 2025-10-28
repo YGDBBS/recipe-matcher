@@ -17,9 +17,14 @@ describe('Auth Helpers', () => {
   describe('loginUser', () => {
     it('should return error for missing email', async () => {
       const loginData = { email: '', password: 'password' }
-      const headers = {}
+      const response = {
+        statusCode: 200,
+        headers: {},
+        body: '',
+        message: 'Login successful'
+      }
       
-      const result = await loginUser(loginData, headers)
+      const result = await loginUser(loginData, response)
       
       expect(result.statusCode).toBe(400)
       expect(JSON.parse(result.body)).toEqual({ error: 'Email and password are required' })
@@ -27,9 +32,14 @@ describe('Auth Helpers', () => {
 
     it('should return error for missing password', async () => {
       const loginData = { email: 'test@example.com', password: '' }
-      const headers = {}
+      const response = {
+        statusCode: 200,
+        headers: {},
+        body: '',
+        message: 'Login successful'
+      }
       
-      const result = await loginUser(loginData, headers)
+      const result = await loginUser(loginData, response)
       
       expect(result.statusCode).toBe(400)
       expect(JSON.parse(result.body)).toEqual({ error: 'Email and password are required' })

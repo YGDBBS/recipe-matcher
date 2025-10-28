@@ -418,6 +418,11 @@ export class StatelessStack extends cdk.Stack {
 
     // Ingredients endpoints
     const ingredientsResource = api.root.addResource('ingredients');
+    ingredientsResource.addCorsPreflight({
+      allowOrigins: apigateway.Cors.ALL_ORIGINS,
+      allowMethods: ['GET', 'POST', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+    });
     ingredientsResource.addMethod('GET', new apigateway.LambdaIntegration(ingredientsLambda));
     ingredientsResource.addMethod('POST', new apigateway.LambdaIntegration(ingredientsLambda));
 

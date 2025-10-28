@@ -1,139 +1,136 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge';
-import * as jwt from 'jsonwebtoken';
-import * as bcrypt from 'bcryptjs';
 import { getUserIdFromEvent } from '../helpers/authorizer-helper';
+import { getUserProfile, loginUser, registerUser, updateUserProfile, verifyToken } from '../helpers/auth-helpers';
+import { getCorsHeaders } from '../helpers/common';
+import { LoginSchema, RegisterSchema, UpdateProfileSchema } from '../types/schemas';
 
-const dynamoClient = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
-const secretsManager = new SecretsManagerClient({});
-const eventBridge = new EventBridgeClient({});
 
-// JWT secret - retrieved from AWS Secrets Manager
-let cachedJwtSecret: string | null = null;
-const JWT_EXPIRES_IN = '7d';
 
-// Function to get JWT secret from Secrets Manager with caching
-async function getJwtSecret(): Promise<string> {
-  if (cachedJwtSecret) {
-    return cachedJwtSecret;
-  }
+export const handler = async (
+  event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> => {
+  const headers = getCorsHeaders();
+  const { httpMethod, path } = event;
+  const body = event.body ? JSON.parse(event.body) : {};
 
   try {
-    const command = new GetSecretValueCommand({
-      SecretId: 'recipe-matcher-jwt-secret'
-    });
-    
-    const response = await secretsManager.send(command);
-    cachedJwtSecret = response.SecretString || '';
-    if (!cachedJwtSecret) {
-      throw new Error('JWT secret is empty');
-    }
-    return cachedJwtSecret;
-  } catch (error) {
-    console.error('Error retrieving JWT secret from Secrets Manager:', error);
-    throw new Error('Failed to retrieve JWT secret');
-  }
-}
-
-interface User {
-  userId: string;
-  email: string;
-  username: string;
-  passwordHash: string;
-  createdAt: string;
-  dietaryRestrictions?: string[];
-  preferences?: {
-    cookingTime?: number;
-    difficultyLevel?: string;
-  };
-}
-
-interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-interface RegisterRequest {
-  email: string;
-  password: string;
-  username: string;
-  dietaryRestrictions?: string[];
-  preferences?: {
-    cookingTime?: number;
-    difficultyLevel?: string;
-  };
-}
-
-export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-  };
-
-  try {
-    const { httpMethod, path } = event;
-    const body = event.body ? JSON.parse(event.body) : {};
-
     if (httpMethod === 'OPTIONS') {
-      return {
+      return { statusCode: 200, headers, body: '' };
+    }
+
+    if (path === '/auth/login' && httpMethod === 'POST') {
+      const result = LoginSchema.safeParse(body);
+      if (!result.success) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'Invalid login data', details: result.error.format() }),
+        };
+      }
+      return await loginUser(result.data, {
         statusCode: 200,
         headers,
-        body: '',
-      };
-    }
-
-    // Handle different auth operations based on the request body or query params
-    if (path === '/auth' && httpMethod === 'POST') {
-      const { operation } = body;
-      
-      if (operation === 'login') {
-        return await loginUser(body as LoginRequest);
-      } else if (operation === 'register') {
-        return await registerUser(body as RegisterRequest);
-      } else if (operation === 'verify') {
-        return await verifyToken(event.headers.Authorization);
-      } else {
-        // Default to register for backward compatibility
-        return await registerUser(body as RegisterRequest);
-      }
-    }
-
-    if (path === '/auth' && httpMethod === 'GET') {
-      return await getUserProfile(event.headers.Authorization);
-    }
-
-    if (path === '/auth' && httpMethod === 'PUT') {
-      return await updateUserProfile(event.headers.Authorization, body);
-    }
-
-    // Handle direct path routing for new endpoints
-    if (path === '/auth/login' && httpMethod === 'POST') {
-      return await loginUser(body as LoginRequest);
+        body: JSON.stringify(result.data),
+        message: 'Login successful',
+      });
     }
 
     if (path === '/auth/register' && httpMethod === 'POST') {
-      return await registerUser(body as RegisterRequest);
+      const result = RegisterSchema.safeParse(body);
+      if (!result.success) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'Invalid registration data', details: result.error.format() }),
+        };
+      }
+      return await registerUser(result.data, {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify(result.data),
+        message: 'Registration successful',
+      });
     }
 
+    // === PUBLIC: /auth/verify ===
+    if (path === '/auth/verify' && httpMethod === 'POST') {
+      return await verifyToken(event.headers.Authorization, {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ valid: true, userId: event.headers.Authorization }),
+        message: 'Token verified',
+      });
+    }
+
+    // === PROTECTED: /auth/profile (GET) ===
     if (path === '/auth/profile' && httpMethod === 'GET') {
       const userId = getUserIdFromEvent(event);
-      return await getUserProfile(userId);
+      if (!userId) {
+        return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
+      }
+      return await getUserProfile(userId, {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ user: userId }),
+        message: 'Profile retrieved',
+      });
     }
 
+    // === PROTECTED: /auth/profile (PUT) ===
     if (path === '/auth/profile' && httpMethod === 'PUT') {
       const userId = getUserIdFromEvent(event);
-      return await updateUserProfile(userId, body);
+      if (!userId) {
+        return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
+      }
+
+      const result = UpdateProfileSchema.safeParse(body);
+      if (!result.success) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'Invalid update data', details: result.error.format() }),
+        };
+      }
+
+      return await updateUserProfile(userId, result.data, {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify(result.data),
+        message: 'Update successful',
+      });
     }
 
-    if (path === '/auth/verify' && httpMethod === 'POST') {
-      return await verifyToken(event.headers.Authorization);
-    }
+    // // === LEGACY: /auth (POST with operation) — DEPRECATE SOON ===
+    // if (path === '/auth' && httpMethod === 'POST') {
+    //   console.warn('DEPRECATED: Use /auth/login or /auth/register instead of /auth with operation');
+    //   const { operation } = body;
+
+    //   if (operation === 'login') {
+    //     const result = LoginSchema.safeParse(body);
+    //     if (!result.success) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid login' }) };
+    //     return await loginUser(result.data, {
+    //       statusCode: 200,
+    //       headers,
+    //       body: JSON.stringify(result.data),
+    //       message: 'Login successful',
+    //     });
+    //   }
+
+    //   if (operation === 'register') {
+    //     const result = RegisterSchema.safeParse(body);
+    //     if (!result.success) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid register' }) };
+    //     return await registerUser(result.data);
+    //   }
+
+    //   if (operation === 'verify') {
+    //     return await verifyToken(event.headers.Authorization);
+    //   }
+
+    //   return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid operation' }) };
+    // }
 
     return {
       statusCode: 404,
@@ -141,7 +138,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       body: JSON.stringify({ error: 'Not found' }),
     };
   } catch (error) {
-    console.error('Auth error:', error);
+    console.error('Auth handler error:', error);
     return {
       statusCode: 500,
       headers,
@@ -149,333 +146,3 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     };
   }
 };
-
-async function loginUser(loginData: LoginRequest): Promise<APIGatewayProxyResult> {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-  };
-
-  try {
-    const { email, password } = loginData;
-
-    if (!email || !password) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Email and password are required' }),
-      };
-    }
-
-    // Find user by email (using scan for now since GSI might not be ready)
-    const result = await docClient.send(new ScanCommand({
-      TableName: process.env.USERS_TABLE,
-      FilterExpression: 'email = :email',
-      ExpressionAttributeValues: {
-        ':email': email.toLowerCase(),
-      },
-    }));
-
-    if (!result.Items || result.Items.length === 0) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: 'Invalid credentials' }),
-      };
-    }
-
-    const user = result.Items[0] as User;
-
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
-    if (!isValidPassword) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: 'Invalid credentials' }),
-      };
-    }
-
-    // Generate JWT token
-    const jwtSecret = await getJwtSecret();
-    const token = jwt.sign(
-      { 
-        userId: user.userId, 
-        email: user.email,
-        username: user.username 
-      },
-      jwtSecret,
-      { expiresIn: JWT_EXPIRES_IN }
-    );
-
-    // Remove password hash from response
-    const { passwordHash: _passwordHash, ...userWithoutPassword } = user;
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ 
-        user: userWithoutPassword,
-        token 
-      }),
-    };
-  } catch (error) {
-    console.error('Login error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: 'Login failed' }),
-    };
-  }
-}
-
-async function registerUser(userData: RegisterRequest): Promise<APIGatewayProxyResult> {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-  };
-
-  try {
-    const { email, password, username, dietaryRestrictions, preferences } = userData;
-
-    if (!email || !password || !username) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Email, password, and username are required' }),
-      };
-    }
-
-    // Check if user already exists (using scan for now since GSI might not be ready)
-    const existingUser = await docClient.send(new ScanCommand({
-      TableName: process.env.USERS_TABLE,
-      FilterExpression: 'email = :email',
-      ExpressionAttributeValues: {
-        ':email': email.toLowerCase(),
-      },
-    }));
-
-    if (existingUser.Items && existingUser.Items.length > 0) {
-      return {
-        statusCode: 409,
-        headers,
-        body: JSON.stringify({ error: 'User already exists with this email' }),
-      };
-    }
-
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const userId = generateId();
-    const user: User = {
-      userId,
-      email: email.toLowerCase(),
-      username,
-      passwordHash,
-      createdAt: new Date().toISOString(),
-      dietaryRestrictions: dietaryRestrictions || [],
-      preferences: preferences || {},
-    };
-
-    await docClient.send(new PutCommand({
-      TableName: process.env.USERS_TABLE,
-      Item: user,
-    }));
-
-    // Generate JWT token
-    const jwtSecret = await getJwtSecret();
-    const token = jwt.sign(
-      { 
-        userId: user.userId, 
-        email: user.email,
-        username: user.username 
-      },
-      jwtSecret,
-      { expiresIn: JWT_EXPIRES_IN }
-    );
-
-    // Publish UserRegistered event
-    try {
-      await eventBridge.send(new PutEventsCommand({
-        Entries: [{
-          Source: 'recipe-matcher.user',
-          DetailType: 'UserRegistered',
-          Detail: JSON.stringify({
-            userId: user.userId,
-            email: user.email,
-            username: user.username,
-            timestamp: user.createdAt,
-            metadata: {
-              registrationSource: 'web',
-            },
-          }),
-          EventBusName: process.env.EVENT_BUS_NAME || 'recipe-matcher-events',
-        }],
-      }));
-    } catch (error) {
-      console.error('Error publishing UserRegistered event:', error);
-      // Don't fail registration if event publishing fails
-    }
-
-    // Remove password hash from response
-    const { passwordHash: _, ...userWithoutPassword } = user;
-
-    return {
-      statusCode: 201,
-      headers,
-      body: JSON.stringify({ 
-        user: userWithoutPassword,
-        token 
-      }),
-    };
-  } catch (error) {
-    console.error('Registration error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: 'Registration failed' }),
-    };
-  }
-}
-
-async function getUserProfile(userId?: string): Promise<APIGatewayProxyResult> {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-  };
-
-  try {
-    if (!userId) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: 'Authorization required' }),
-      };
-    }
-    
-    const result = await docClient.send(new GetCommand({
-      TableName: process.env.USERS_TABLE,
-      Key: { userId },
-    }));
-
-    if (!result.Item) {
-      return {
-        statusCode: 404,
-        headers,
-        body: JSON.stringify({ error: 'User not found' }),
-      };
-    }
-
-    // Remove password hash from response
-    const userWithoutPassword = { ...result.Item };
-    delete userWithoutPassword.passwordHash;
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ user: userWithoutPassword }),
-    };
-  } catch (error) {
-    console.error('Get profile error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: 'Failed to get user profile' }),
-    };
-  }
-}
-
-async function updateUserProfile(userId: string | undefined, userData: any): Promise<APIGatewayProxyResult> {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-  };
-
-  try {
-    if (!userId) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: 'Authorization required' }),
-      };
-    }
-    
-    // Get existing user
-    const existingUser = await docClient.send(new GetCommand({
-      TableName: process.env.USERS_TABLE,
-      Key: { userId },
-    }));
-
-    if (!existingUser.Item) {
-      return {
-        statusCode: 404,
-        headers,
-        body: JSON.stringify({ error: 'User not found' }),
-      };
-    }
-
-    // Update user data
-    const updatedUser = {
-      ...existingUser.Item,
-      ...userData,
-      updatedAt: new Date().toISOString(),
-    };
-
-    await docClient.send(new PutCommand({
-      TableName: process.env.USERS_TABLE,
-      Item: updatedUser,
-    }));
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ user: updatedUser }),
-    };
-  } catch (error) {
-    console.error('Update profile error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: 'Failed to update user profile' }),
-    };
-  }
-}
-
-function generateId(): string {
-  return Math.random().toString(36).substr(2, 9);
-}
-
-async function verifyToken(authorization?: string): Promise<APIGatewayProxyResult> {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-  };
-
-  try {
-    if (!authorization) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: 'Authorization required' }),
-      };
-    }
-
-    // Verify and decode the token
-    const token = authorization.replace('Bearer ', '');
-    const jwtSecret = await getJwtSecret();
-    const decoded = jwt.verify(token, jwtSecret) as { userId: string };
-    
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ valid: true, userId: decoded.userId }),
-    };
-  } catch (error) {
-    console.error('Token verification error:', error);
-    return {
-      statusCode: 401,
-      headers,
-      body: JSON.stringify({ error: 'Invalid token' }),
-    };
-  }
-}

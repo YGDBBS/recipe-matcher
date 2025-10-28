@@ -1,33 +1,7 @@
 import { APIGatewayAuthorizerResult } from 'aws-lambda';
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import * as jwt from 'jsonwebtoken';
-
-const secretsManager = new SecretsManagerClient({});
-
-// Cache the JWT secret
-let cachedJwtSecret: string | null = null;
-
-async function getJwtSecret(): Promise<string> {
-  if (cachedJwtSecret) {
-    return cachedJwtSecret;
-  }
-
-  try {
-    const command = new GetSecretValueCommand({
-      SecretId: 'recipe-matcher-jwt-secret'
-    });
-    
-    const response = await secretsManager.send(command);
-    cachedJwtSecret = response.SecretString || '';
-    if (!cachedJwtSecret) {
-      throw new Error('JWT secret is empty');
-    }
-    return cachedJwtSecret;
-  } catch (error) {
-    console.error('Error retrieving JWT secret from Secrets Manager:', error);
-    throw new Error('Failed to retrieve JWT secret');
-  }
-}
+import { getJwtSecret } from '../utils/secrets';
 
 export const handler = async (event: any): Promise<APIGatewayAuthorizerResult> => {
   const methodArn = event.methodArn;

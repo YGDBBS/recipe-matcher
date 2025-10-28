@@ -1,42 +1,17 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcryptjs';
+import { getJwtSecret } from '../utils/secrets';
 
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
-const secretsManager = new SecretsManagerClient({});
 const eventBridge = new EventBridgeClient({});
 
-// JWT secret - retrieved from AWS Secrets Manager
-let cachedJwtSecret: string | null = null;
 const JWT_EXPIRES_IN = '7d';
 
-// Function to get JWT secret from Secrets Manager with caching
-async function getJwtSecret(): Promise<string> {
-  if (cachedJwtSecret) {
-    return cachedJwtSecret;
-  }
-
-  try {
-    const command = new GetSecretValueCommand({
-      SecretId: 'recipe-matcher-jwt-secret'
-    });
-    
-    const response = await secretsManager.send(command);
-    cachedJwtSecret = response.SecretString || '';
-    if (!cachedJwtSecret) {
-      throw new Error('JWT secret is empty');
-    }
-    return cachedJwtSecret;
-  } catch (error) {
-    console.error('Error retrieving JWT secret from Secrets Manager:', error);
-    throw new Error('Failed to retrieve JWT secret');
-  }
-}
 
 export interface User {
   userId: string;
@@ -56,6 +31,13 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface LoginResponse {
+  statusCode: number;
+  headers: { [header: string]: string | number | boolean };
+  body: string;
+  message?: string
+}
+
 export interface RegisterRequest {
   email: string;
   password: string;
@@ -67,14 +49,14 @@ export interface RegisterRequest {
   };
 }
 
-export async function loginUser(loginData: LoginRequest, headers: any): Promise<APIGatewayProxyResult> {
+export async function loginUser(loginData: LoginRequest, response: LoginResponse): Promise<APIGatewayProxyResult> {
   try {
     const { email, password } = loginData;
 
     if (!email || !password) {
       return {
         statusCode: 400,
-        headers,
+        headers: response.headers,
         body: JSON.stringify({ error: 'Email and password are required' }),
       };
     }
@@ -91,7 +73,7 @@ export async function loginUser(loginData: LoginRequest, headers: any): Promise<
     if (!result.Items || result.Items.length === 0) {
       return {
         statusCode: 401,
-        headers,
+        headers: response.headers,
         body: JSON.stringify({ error: 'Invalid credentials' }),
       };
     }
@@ -103,7 +85,7 @@ export async function loginUser(loginData: LoginRequest, headers: any): Promise<
     if (!isValidPassword) {
       return {
         statusCode: 401,
-        headers,
+        headers: response.headers,
         body: JSON.stringify({ error: 'Invalid credentials' }),
       };
     }
@@ -125,7 +107,7 @@ export async function loginUser(loginData: LoginRequest, headers: any): Promise<
 
     return {
       statusCode: 200,
-      headers,
+      headers: response.headers,
       body: JSON.stringify({ 
         user: userWithoutPassword,
         token 
