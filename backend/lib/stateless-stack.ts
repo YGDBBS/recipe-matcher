@@ -115,6 +115,8 @@ export class StatelessStack extends cdk.Stack {
       functionName: 'recipe-matcher-auth',
       entry: 'src/lambda/auth.ts',
       handler: 'handler',
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
     });
 
     // Authorizer Lambda
