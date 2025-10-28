@@ -110,7 +110,15 @@ export const loginUser = async (
         { expiresIn: JWT_EXPIRES_IN }
       );
   
-      const { passwordHash, ...safeUser } = user;
+      // Remove password hash from response
+      const safeUser: Omit<User, 'passwordHash'> = {
+        userId: user.userId,
+        email: user.email,
+        username: user.username,
+        createdAt: user.createdAt,
+        dietaryRestrictions: user.dietaryRestrictions,
+        preferences: user.preferences,
+      };
   
       return {
         statusCode: 200,
