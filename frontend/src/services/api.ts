@@ -1,5 +1,7 @@
 
-const API_BASE_URL = 'https://wrkkwv7lrb.execute-api.eu-west-1.amazonaws.com/prod';
+import { config } from './config';
+
+const API_BASE_URL = config.apiBaseUrl;
 export interface ApiResponse<T> {
   data?: T;
   error?: string;

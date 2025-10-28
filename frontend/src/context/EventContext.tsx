@@ -1,5 +1,6 @@
 import { createContext, useContext, useReducer, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { config } from '../services/config';
 
 // Event types that the frontend will receive
 export interface FrontendEvent {
@@ -219,8 +220,8 @@ export function EventProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'CONNECTION_START' });
 
     try {
-      // Get WebSocket URL from environment or use default
-      const baseUrl = import.meta.env.VITE_WS_URL || 'wss://your-websocket-api.execute-api.region.amazonaws.com/prod';
+      // Get WebSocket URL from config
+      const baseUrl = config.websocketUrl;
       
       // For now, simulate connection until we deploy the backend
       if (baseUrl.includes('your-websocket-api')) {
