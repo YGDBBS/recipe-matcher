@@ -1,19 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
+import { createTheme } from '@mui/material/styles';
 import { Box, AppBar, Toolbar, Typography, Container, Button, CircularProgress } from '@mui/material';
 import { LocalDining, Search, Login as LoginIcon } from '@mui/icons-material';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
 // Voice recognition implemented with native browser API
 import AuthModal from './components/AuthModal';
 import UserProfile from './components/UserProfile';
 import NotificationCenter from './components/NotificationCenter';
 import NotificationToast from './components/NotificationToast';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { EventProvider, useEvents } from './context/EventContext';
+import { useAuth } from './context/AuthContext';
+import { useEvents } from './context/EventContext';
 import IngredientInput from './components/IngredientInput';
 import RecipeResults from './components/RecipeResults';
-import { RecipeProvider, useRecipe } from './context/RecipeContext';
+import { useRecipe } from './context/RecipeContext';
 
 const theme = createTheme({
   palette: {
@@ -198,18 +197,7 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <EventProvider>
-          <AuthProvider>
-            <RecipeProvider>
-              <AppContent />
-            </RecipeProvider>
-          </AuthProvider>
-        </EventProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <AppContent />
   );
 }
 
