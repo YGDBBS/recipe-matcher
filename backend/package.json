@@ -30,7 +30,7 @@
   "description": "Backend infrastructure for Recipe Matcher app",
   "dependencies": {
     "@aws-sdk/client-apigatewaymanagementapi": "^3.896.0",
-    "@aws-sdk/client-dynamodb": "^3.896.0",
+    "@aws-sdk/client-dynamodb": "^3.918.0",
     "@aws-sdk/client-eventbridge": "^3.899.0",
     "@aws-sdk/client-secrets-manager": "^3.911.0",
     "@aws-sdk/client-sns": "^3.899.0",
