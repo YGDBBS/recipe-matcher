@@ -47,22 +47,12 @@ export const handler = async (
           body: JSON.stringify({ error: 'Invalid registration data', details: result.error.format() }),
         };
       }
-      return await registerUser(result.data, {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify(result.data),
-        message: 'Registration successful',
-      });
+      return await registerUser(result.data, headers);
     }
 
     // === PUBLIC: /auth/verify ===
     if (path === '/auth/verify' && httpMethod === 'POST') {
-      return await verifyToken(event.headers.Authorization, {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({ valid: true, userId: event.headers.Authorization }),
-        message: 'Token verified',
-      });
+      return await verifyToken(event.headers.Authorization, headers);
     }
 
     // === PROTECTED: /auth/profile (GET) ===
@@ -71,12 +61,7 @@ export const handler = async (
       if (!userId) {
         return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
       }
-      return await getUserProfile(userId, {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({ user: userId }),
-        message: 'Profile retrieved',
-      });
+      return await getUserProfile(userId, headers);
     }
 
     // === PROTECTED: /auth/profile (PUT) ===
@@ -95,12 +80,7 @@ export const handler = async (
         };
       }
 
-      return await updateUserProfile(userId, result.data, {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify(result.data),
-        message: 'Update successful',
-      });
+      return await updateUserProfile(userId, result.data, headers);
     }
 
     // // === LEGACY: /auth (POST with operation) — DEPRECATE SOON ===
