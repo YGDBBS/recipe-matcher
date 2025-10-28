@@ -263,7 +263,15 @@ export const getUserProfile = async (
         };
       }
   
-      const { passwordHash: _, ...safeUser } = result.Item as User;
+      // Remove password hash from response
+      const safeUser: Omit<User, 'passwordHash'> = {
+        userId: (result.Item as User).userId,
+        email: (result.Item as User).email,
+        username: (result.Item as User).username,
+        createdAt: (result.Item as User).createdAt,
+        dietaryRestrictions: (result.Item as User).dietaryRestrictions,
+        preferences: (result.Item as User).preferences,
+      };
   
       return {
         statusCode: 200,
