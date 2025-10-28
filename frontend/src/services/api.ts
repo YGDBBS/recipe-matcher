@@ -232,12 +232,9 @@ export const api = {
     email: string;
     password: string;
   }): Promise<ApiResponse<{ user: any; token: string }>> {
-    return apiCall('/auth', {
+    return apiCall('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({
-        operation: 'login',
-        ...loginData,
-      }),
+      body: JSON.stringify(loginData),
     });
   },
 
@@ -248,21 +245,15 @@ export const api = {
     dietaryRestrictions?: string[];
     preferences?: any;
   }): Promise<ApiResponse<{ user: any; token: string }>> {
-    return apiCall('/auth', {
+    return apiCall('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({
-        operation: 'register',
-        ...userData,
-      }),
+      body: JSON.stringify(userData),
     });
   },
 
   async verifyToken(token: string): Promise<ApiResponse<{ valid: boolean; userId: string }>> {
-    return apiCall('/auth', {
+    return apiCall('/auth/verify', {
       method: 'POST',
-      body: JSON.stringify({
-        operation: 'verify',
-      }),
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -270,7 +261,7 @@ export const api = {
   },
 
   async getUserProfile(token: string): Promise<ApiResponse<{ user: any }>> {
-    return apiCall('/auth', {
+    return apiCall('/auth/profile', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
