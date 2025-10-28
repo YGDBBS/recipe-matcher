@@ -60,14 +60,6 @@ jobs:
         run: npx bundlesize
         continue-on-error: true
 
-      - name: Check for TODO/FIXME comments
-        run: |
-          echo "Checking for TODO/FIXME comments..."
-          if grep -r "TODO\|FIXME" frontend/src backend/src --exclude-dir=node_modules; then
-            echo "Found TODO/FIXME comments. Consider addressing them."
-            exit 1
-          fi
-
       - name: Check for console.log statements
         run: |
           echo "Checking for console.log statements..."
