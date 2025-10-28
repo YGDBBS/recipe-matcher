@@ -110,7 +110,7 @@ export const loginUser = async (
         { expiresIn: JWT_EXPIRES_IN }
       );
   
-      const { passwordHash: _, ...safeUser } = user;
+      const { passwordHash, ...safeUser } = user;
   
       return {
         statusCode: 200,
@@ -208,7 +208,15 @@ export const registerUser = async (
         console.error('Failed to publish UserRegistered (non-blocking):', error);
       }
   
-      const { passwordHash: _, ...safeUser } = user;
+      // Remove password hash from response
+      const safeUser: Omit<User, 'passwordHash'> = {
+        userId: user.userId,
+        email: user.email,
+        username: user.username,
+        createdAt: user.createdAt,
+        dietaryRestrictions: user.dietaryRestrictions,
+        preferences: user.preferences,
+      };
   
       return {
         statusCode: 201,
