@@ -66,12 +66,11 @@ npm run cdk deploy
 ## 🔧 API Endpoints
 
 ### Authentication
-- `POST /auth` - Login/Register/Verify token
-
-### Recipes
-- `GET /recipes` - List recipes with pagination
-- `GET /recipes/{id}` - Get specific recipe details
-- `POST /recipes` - Create recipe (authenticated)
+- `POST /auth/login` - User login
+- `POST /auth/register` - User registration
+- `POST /auth/verify` - Verify JWT token
+- `GET /auth/profile` - Get user profile
+- `PUT /auth/profile` - Update user profile
 
 ### Ingredients
 - `GET /ingredients` - List available ingredients
@@ -82,13 +81,18 @@ npm run cdk deploy
 - `POST /user-ingredients` - Add ingredient to user's pantry
 - `DELETE /user-ingredients` - Remove ingredient from pantry
 
+### Recipes
+- `GET /recipes` - List recipes with pagination
+- `GET /recipes/{id}` - Get specific recipe details
+- `POST /recipes` - Create recipe (authenticated)
+
 ### Enhanced Matching (v2)
 - `POST /matching-v2/find-recipes` - **Advanced fuzzy matching** with ingredient normalization
 - `POST /matching-v2/calculate-match` - Calculate detailed match percentage
 - `POST /matching-v2/ingredient-analysis` - Analyze ingredient matching patterns
 
 ### WebSocket
-- `wss://api.recipe-matcher.com/prod` - Real-time notifications and updates
+- `wss://[your-websocket-url]/prod` - Real-time notifications and updates
 
 ## 🧠 Advanced Fuzzy Matching
 
@@ -127,17 +131,12 @@ The app supports voice input for adding ingredients:
 - Token stored in localStorage
 - Automatic token verification
 
-## 📊 Data Sources
-
-- **Demo Data** - Curated recipes for development
-- **User-Generated** - Future user-contributed recipes
-
 ## 🚀 Deployment Status
 
 The application is currently deployed on AWS with the following infrastructure:
 
 ### ✅ Deployed Components
-- **API Gateway** - REST API endpoints (`https://wrkkwv7lrb.execute-api.eu-west-1.amazonaws.com/prod`)
+- **API Gateway** - REST API endpoints
 - **Lambda Functions** - 8 serverless functions for different operations
 - **DynamoDB** - Single-table design with 3 tables
 - **WebSocket API** - Real-time notifications
@@ -147,11 +146,6 @@ The application is currently deployed on AWS with the following infrastructure:
 ### 🔧 Infrastructure Stack
 - **StatefulStack** - Database tables and persistent resources
 - **StatelessStack** - Lambda functions, API Gateway, and compute resources
-
-### 📊 Current Data
-- **50+ Recipes** - High-quality recipe data with ingredients
-- **Demo Users** - Test authentication system
-- **Fuzzy Matching** - Enhanced matching-v2 endpoints deployed
 
 ## 🧪 Development Scripts
 
@@ -167,23 +161,6 @@ The application is currently deployed on AWS with the following infrastructure:
 - `npm run build` - Production build
 - `npm run preview` - Preview production build
 - `npm run test` - Run component tests
-
-## 🎯 Current Development Status
-
-### ✅ Recently Completed
-- **Enhanced Fuzzy Matching System** - Advanced ingredient normalization and similarity algorithms
-- **Matching-v2 API** - New endpoints with improved matching logic
-- **Single-Table Database Design** - Optimized DynamoDB schema
-- **Frontend Integration** - Updated UI to use new matching endpoints
-- **Error Handling** - Improved error handling and user feedback
-- **Type Safety** - Fixed TypeScript issues and improved type definitions
-
-### 🚧 Next Steps
-- **Performance Optimization** - Database query optimization and caching strategies
-- **Match Analytics** - User behavior tracking and recipe popularity metrics
-- **Enhanced UI** - Better recipe display with match analysis
-- **Mobile Responsiveness** - Improved mobile experience
-- **Testing** - Comprehensive test coverage for fuzzy matching algorithms
 
 ## 🤝 Contributing
 
