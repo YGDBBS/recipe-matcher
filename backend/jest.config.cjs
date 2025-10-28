@@ -27,6 +27,8 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
+  // TODO: Raise coverage thresholds once we add meaningful tests for helpers and lambdas.
+  // Suggested next step: start with 20-30% and increment as coverage increases.
   coverageThreshold: {
     global: {
       branches: 0,
