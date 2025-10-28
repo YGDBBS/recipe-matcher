@@ -88,15 +88,42 @@ export async function findMatchingRecipes(requestBody: any, userId: string | und
       }));
     }
 
-    // Get all recipes - let's see what's actually in the table
+    // Get all recipes using single-table design
     const recipesResult = await docClient.send(new ScanCommand({
       TableName: process.env.RECIPES_TABLE,
+      FilterExpression: 'entity_type = :recipeType',
+      ExpressionAttributeValues: {
+        ':recipeType': 'recipe'
+      }
     }));
 
-    const allItems = recipesResult.Items || [];
+    const recipeEntities = recipesResult.Items || [];
     
-    // Filter for actual recipe records (those with title and ingredients)
-    const allRecipes = allItems.filter(item => item.title && item.ingredients);
+    // For each recipe, get its ingredients
+    const allRecipes: any[] = [];
+    
+    for (const recipe of recipeEntities) {
+      // Get ingredients for this recipe
+      const ingredientsResult = await docClient.send(new QueryCommand({
+        TableName: process.env.RECIPES_TABLE,
+        KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+        ExpressionAttributeValues: {
+          ':pk': recipe.PK,
+          ':sk': 'INGREDIENT#'
+        }
+      }));
+      
+      const ingredients = ingredientsResult.Items?.map(ing => ({
+        name: ing.name,
+        quantity: ing.quantity || '1',
+        unit: ing.unit || 'piece'
+      })) || [];
+      
+      allRecipes.push({
+        ...recipe,
+        ingredients
+      });
+    }
     
     // Calculate matches for each recipe
     const recipeMatches: RecipeMatch[] = [];
