@@ -20,11 +20,6 @@ jest.mock('@aws-sdk/lib-dynamodb', () => ({
   ScanCommand: jest.fn(),
 }))
 
-jest.mock('@aws-sdk/client-s3', () => ({
-  S3Client: jest.fn(),
-  GetObjectCommand: jest.fn(),
-  PutObjectCommand: jest.fn(),
-}))
 
 jest.mock('@aws-sdk/client-sns', () => ({
   SNSClient: jest.fn(),
@@ -34,6 +29,16 @@ jest.mock('@aws-sdk/client-sns', () => ({
 jest.mock('@aws-sdk/client-eventbridge', () => ({
   EventBridgeClient: jest.fn(),
   PutEventsCommand: jest.fn(),
+}))
+
+jest.mock('@aws-sdk/client-apigatewaymanagementapi', () => ({
+  ApiGatewayManagementApiClient: jest.fn(),
+  PostToConnectionCommand: jest.fn(),
+}))
+
+jest.mock('@aws-sdk/client-secrets-manager', () => ({
+  SecretsManagerClient: jest.fn(),
+  GetSecretValueCommand: jest.fn(),
 }))
 
 // Mock bcryptjs
