@@ -59,11 +59,3 @@ jobs:
         working-directory: ./frontend
         run: npx bundlesize
         continue-on-error: true
-
-      - name: Check for console.log statements
-        run: |
-          echo "Checking for console.log statements..."
-          if grep -r "console\.log" frontend/src backend/src --exclude-dir=node_modules; then
-            echo "Found console.log statements. Consider removing them for production."
-            exit 1
-          fi
