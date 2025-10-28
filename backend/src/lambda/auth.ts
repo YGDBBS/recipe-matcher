@@ -1,7 +1,4 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge';
 import { getUserIdFromEvent } from '../helpers/authorizer-helper';
 import { getUserProfile, loginUser, registerUser, updateUserProfile, verifyToken } from '../helpers/auth-helpers';
 import { getCorsHeaders } from '../helpers/common';
@@ -82,35 +79,6 @@ export const handler = async (
 
       return await updateUserProfile(userId, result.data, headers);
     }
-
-    // // === LEGACY: /auth (POST with operation) — DEPRECATE SOON ===
-    // if (path === '/auth' && httpMethod === 'POST') {
-    //   console.warn('DEPRECATED: Use /auth/login or /auth/register instead of /auth with operation');
-    //   const { operation } = body;
-
-    //   if (operation === 'login') {
-    //     const result = LoginSchema.safeParse(body);
-    //     if (!result.success) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid login' }) };
-    //     return await loginUser(result.data, {
-    //       statusCode: 200,
-    //       headers,
-    //       body: JSON.stringify(result.data),
-    //       message: 'Login successful',
-    //     });
-    //   }
-
-    //   if (operation === 'register') {
-    //     const result = RegisterSchema.safeParse(body);
-    //     if (!result.success) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid register' }) };
-    //     return await registerUser(result.data);
-    //   }
-
-    //   if (operation === 'verify') {
-    //     return await verifyToken(event.headers.Authorization);
-    //   }
-
-    //   return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid operation' }) };
-    // }
 
     return {
       statusCode: 404,

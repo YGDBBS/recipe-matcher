@@ -13,6 +13,8 @@ export function getCorsHeaders() {
   };
 }
 
+// Error handling with plain objects - simpler and cleaner
+
 export function createErrorResponse(statusCode: number, message: string) {
   return {
     statusCode,
@@ -27,4 +29,16 @@ export function createSuccessResponse(data: any, statusCode: number = 200) {
     headers: getCorsHeaders(),
     body: JSON.stringify(data),
   };
+}
+
+// Convert unknown errors to a safe API Gateway response
+export function errorResponseFromError(err: unknown) {
+  // Check if it's a plain object with statusCode and message
+  if (err && typeof err === 'object' && 'statusCode' in err && 'message' in err) {
+    const errorObj = err as { statusCode: number; message: string };
+    return createErrorResponse(errorObj.statusCode, errorObj.message);
+  }
+  
+  console.error('Unhandled error:', err);
+  return createErrorResponse(500, 'Internal server error');
 }

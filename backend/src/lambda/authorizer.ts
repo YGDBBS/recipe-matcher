@@ -1,5 +1,4 @@
 import { APIGatewayAuthorizerResult } from 'aws-lambda';
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import * as jwt from 'jsonwebtoken';
 import { getJwtSecret } from '../utils/secrets';
 
@@ -47,19 +46,6 @@ export const handler = async (event: any): Promise<APIGatewayAuthorizerResult> =
       throw new Error('Token does not contain userId');
     }
 
-    // Generate policy
-    const policyDocument = {
-      Version: '2012-10-17',
-      Statement: [
-        {
-          Action: 'execute-api:Invoke',
-          Effect: 'Allow',
-          Resource: methodArn
-        }
-      ]
-    };
-
-    // Return authorizer response
     return {
       principalId: userId,
       policyDocument: {

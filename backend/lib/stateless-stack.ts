@@ -143,6 +143,14 @@ export class StatelessStack extends cdk.Stack {
       handler: 'handler',
     });
 
+    // User Ingredients Lambda
+    const userIngredientsLambda = new NodejsFunction(this, 'UserIngredientsLambda', {
+      ...commonLambdaProps,
+      functionName: 'recipe-matcher-user-ingredients',
+      entry: 'src/lambda/user-ingredients.ts',
+      handler: 'handler',
+    });
+
     // Matching Lambda
     const matchingLambda = new NodejsFunction(this, 'MatchingLambda', {
       ...commonLambdaProps,
@@ -247,7 +255,7 @@ export class StatelessStack extends cdk.Stack {
 
     // Grant permissions to Lambda functions
     usersTable.grantReadWriteData(authLambda);
-    usersTable.grantReadWriteData(ingredientsLambda); // Grant access to users table for user ingredients
+    usersTable.grantReadWriteData(userIngredientsLambda); // Grant access to users table for user ingredients
     recipesTable.grantReadWriteData(recipesLambda);
     recipesTable.grantReadWriteData(matchingV2Lambda); // Grant access to recipes table for fuzzy matching
     recipeImagesBucket.grantReadWrite(recipesLambda);
@@ -434,9 +442,9 @@ export class StatelessStack extends cdk.Stack {
       allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
       allowHeaders: ['Content-Type', 'Authorization'],
     });
-    userIngredientsResource.addMethod('GET', new apigateway.LambdaIntegration(ingredientsLambda), { authorizer });
-    userIngredientsResource.addMethod('POST', new apigateway.LambdaIntegration(ingredientsLambda), { authorizer });
-    userIngredientsResource.addMethod('DELETE', new apigateway.LambdaIntegration(ingredientsLambda), { authorizer });
+    userIngredientsResource.addMethod('GET', new apigateway.LambdaIntegration(userIngredientsLambda), { authorizer });
+    userIngredientsResource.addMethod('POST', new apigateway.LambdaIntegration(userIngredientsLambda), { authorizer });
+    userIngredientsResource.addMethod('DELETE', new apigateway.LambdaIntegration(userIngredientsLambda), { authorizer });
 
     // Matching endpoints
     const matchingResource = api.root.addResource('matching');

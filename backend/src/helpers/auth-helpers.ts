@@ -149,14 +149,14 @@ export async function registerUser(userData: RegisterRequest, headers: any): Pro
     }
 
     // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const userId = generateId();
     const user: User = {
       userId,
       email: email.toLowerCase(),
       username,
-      passwordHash,
+      passwordHash: hashedPassword,
       createdAt: new Date().toISOString(),
       dietaryRestrictions: dietaryRestrictions || [],
       preferences: preferences || {},
@@ -203,7 +203,7 @@ export async function registerUser(userData: RegisterRequest, headers: any): Pro
     }
 
     // Remove password hash from response
-    const { passwordHash: _, ...userWithoutPassword } = user;
+    const { passwordHash, ...userWithoutPassword } = user;
 
     return {
       statusCode: 201,
@@ -313,7 +313,7 @@ export async function verifyToken(authorization: string | undefined, headers: an
       };
     }
 
-    const userId = extractUserIdFromToken(authorization);
+    const userId = await extractUserIdFromToken(authorization);
     if (!userId) {
       return {
         statusCode: 401,

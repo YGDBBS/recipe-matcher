@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { generateId, getCorsHeaders, createSuccessResponse, errorResponseFromError } from '../helpers/common';
 
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
@@ -13,80 +14,36 @@ interface Ingredient {
   createdAt: string;
 }
 
-interface UserIngredient {
-  userId: string;
-  ingredientId: string;
-  name: string;
-  quantity: number;
-  unit: string;
-  expiryDate?: string;
-  addedAt: string;
-}
-
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-  };
-
   try {
-    const { httpMethod, path, queryStringParameters } = event;
-    const body = event.body ? JSON.parse(event.body) : {};
+    const { httpMethod, queryStringParameters } = event;
 
     if (httpMethod === 'OPTIONS') {
       return {
         statusCode: 200,
-        headers,
+        headers: getCorsHeaders(),
         body: '',
       };
     }
 
-    if (path === '/ingredients' && httpMethod === 'GET') {
+    if (httpMethod === 'GET') {
       return await getIngredients(queryStringParameters);
     }
 
-    if (path === '/ingredients' && httpMethod === 'POST') {
+    if (httpMethod === 'POST') {
+      const body = event.body ? JSON.parse(event.body) : {};
       return await createIngredient(body);
     }
 
-    if (path === '/user-ingredients' && httpMethod === 'GET') {
-      return await getUserIngredients(event.headers.Authorization, queryStringParameters);
-    }
-
-    if (path === '/user-ingredients' && httpMethod === 'POST') {
-      return await addUserIngredient(body, event.headers.Authorization);
-    }
-
-    if (path === '/user-ingredients' && httpMethod === 'DELETE') {
-      return await removeUserIngredient(body, event.headers.Authorization);
-    }
-
-    return {
-      statusCode: 404,
-      headers,
-      body: JSON.stringify({ error: 'Not found' }),
-    };
-  } catch (error) {
-    console.error('Ingredients error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: 'Internal server error' }),
-    };
+    throw { statusCode: 404, message: 'Not found' };
+  } catch (err) {
+    return errorResponseFromError(err);
   }
 };
 
 async function getIngredients(queryParams: any): Promise<APIGatewayProxyResult> {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-  };
-
   try {
     const { category, search, limit = '50' } = queryParams || {};
-
     let ingredients: Ingredient[] = [];
 
     if (search) {
@@ -123,27 +80,13 @@ async function getIngredients(queryParams: any): Promise<APIGatewayProxyResult> 
       ingredients = result.Items as Ingredient[] || [];
     }
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ ingredients }),
-    };
+    return createSuccessResponse({ ingredients });
   } catch (error) {
-    console.error('Get ingredients error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: 'Failed to get ingredients' }),
-    };
+    throw { statusCode: 500, message: 'Failed to get ingredients' };
   }
 }
 
 async function createIngredient(ingredientData: any): Promise<APIGatewayProxyResult> {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-  };
-
   try {
     const ingredientId = generateId();
     const now = new Date().toISOString();
@@ -161,195 +104,8 @@ async function createIngredient(ingredientData: any): Promise<APIGatewayProxyRes
       Item: ingredient,
     }));
 
-    return {
-      statusCode: 201,
-      headers,
-      body: JSON.stringify({ ingredient }),
-    };
+    return createSuccessResponse({ ingredient }, 201);
   } catch (error) {
-    console.error('Create ingredient error:', error);
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ error: 'Failed to create ingredient' }),
-    };
+    throw { statusCode: 400, message: 'Failed to create ingredient' };
   }
-}
-
-async function getUserIngredients(authorization?: string, queryParams?: any): Promise<APIGatewayProxyResult> {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-  };
-
-  try {
-    if (!authorization) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: 'Authorization required' }),
-      };
-    }
-
-    const userId = extractUserIdFromToken(authorization);
-    const { limit = '50' } = queryParams || {};
-
-    const result = await docClient.send(new GetCommand({
-      TableName: process.env.USERS_TABLE,
-      Key: {
-        userId: userId,
-      },
-    }));
-
-    const userIngredients = result.Item?.ingredients || [];
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ userIngredients }),
-    };
-  } catch (error) {
-    console.error('Get user ingredients error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: 'Failed to get user ingredients' }),
-    };
-  }
-}
-
-async function addUserIngredient(ingredientData: any, authorization?: string): Promise<APIGatewayProxyResult> {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-  };
-
-  try {
-    if (!authorization) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: 'Authorization required' }),
-      };
-    }
-
-    const userId = extractUserIdFromToken(authorization);
-    const now = new Date().toISOString();
-
-    const userIngredient: UserIngredient = {
-      userId,
-      ingredientId: ingredientData.ingredientId || generateId(),
-      name: ingredientData.name.toLowerCase(),
-      quantity: ingredientData.quantity || 1,
-      unit: ingredientData.unit || 'piece',
-      expiryDate: ingredientData.expiryDate || undefined,
-      addedAt: now,
-    };
-
-    // Remove undefined values to avoid DynamoDB errors
-    const cleanUserIngredient = Object.fromEntries(
-      Object.entries(userIngredient).filter(([_, value]) => value !== undefined)
-    ) as UserIngredient;
-
-    // Get current user data
-    const userResult = await docClient.send(new GetCommand({
-      TableName: process.env.USERS_TABLE,
-      Key: { userId },
-    }));
-
-    const currentIngredients = userResult.Item?.ingredients || [];
-    const updatedIngredients = [...currentIngredients, cleanUserIngredient];
-
-    // Update user with new ingredient
-    await docClient.send(new UpdateCommand({
-      TableName: process.env.USERS_TABLE,
-      Key: { userId },
-      UpdateExpression: 'SET ingredients = :ingredients',
-      ExpressionAttributeValues: {
-        ':ingredients': updatedIngredients,
-      },
-    }));
-
-    return {
-      statusCode: 201,
-      headers,
-      body: JSON.stringify({ userIngredient: cleanUserIngredient }),
-    };
-  } catch (error) {
-    console.error('Add user ingredient error:', error);
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ error: 'Failed to add ingredient' }),
-    };
-  }
-}
-
-async function removeUserIngredient(ingredientData: any, authorization?: string): Promise<APIGatewayProxyResult> {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-  };
-
-  try {
-    if (!authorization) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: 'Authorization required' }),
-      };
-    }
-
-    const userId = extractUserIdFromToken(authorization);
-    const { ingredientId } = ingredientData;
-
-    if (!ingredientId) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Ingredient ID required' }),
-      };
-    }
-
-    // Get current user data
-    const userResult = await docClient.send(new GetCommand({
-      TableName: process.env.USERS_TABLE,
-      Key: { userId },
-    }));
-
-    const currentIngredients = userResult.Item?.ingredients || [];
-    const updatedIngredients = currentIngredients.filter((ing: any) => ing.ingredientId !== ingredientId);
-
-    // Update user with removed ingredient
-    await docClient.send(new UpdateCommand({
-      TableName: process.env.USERS_TABLE,
-      Key: { userId },
-      UpdateExpression: 'SET ingredients = :ingredients',
-      ExpressionAttributeValues: {
-        ':ingredients': updatedIngredients,
-      },
-    }));
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ message: 'Ingredient removed successfully' }),
-    };
-  } catch (error) {
-    console.error('Remove user ingredient error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: 'Failed to remove ingredient' }),
-    };
-  }
-}
-
-function generateId(): string {
-  return Math.random().toString(36).substr(2, 9);
-}
-
-function extractUserIdFromToken(authorization: string): string {
-  const token = authorization.replace('Bearer ', '');
-  return token;
 }

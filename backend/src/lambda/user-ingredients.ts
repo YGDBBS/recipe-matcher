@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, QueryCommand, PutCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { generateId, getCorsHeaders, createErrorResponse, createSuccessResponse } from '../helpers/common';
 import { getUserIdFromEvent } from '../helpers/authorizer-helper';
 
@@ -58,16 +58,14 @@ async function getUserIngredients(userId?: string, queryParams?: any): Promise<A
 
     const { limit = '50' } = queryParams || {};
 
-    const result = await docClient.send(new QueryCommand({
-      TableName: process.env.USER_INGREDIENTS_TABLE,
-      KeyConditionExpression: 'userId = :userId',
-      ExpressionAttributeValues: {
-        ':userId': userId,
+    const result = await docClient.send(new GetCommand({
+      TableName: process.env.USERS_TABLE,
+      Key: {
+        userId: userId,
       },
-      Limit: parseInt(limit),
     }));
 
-    const userIngredients = result.Items as UserIngredient[] || [];
+    const userIngredients = result.Item?.ingredients || [];
     return createSuccessResponse({ userIngredients });
   } catch (_error) {
     return createErrorResponse(500, 'Failed to get user ingredients');
@@ -86,18 +84,37 @@ async function addUserIngredient(ingredientData: any, userId?: string): Promise<
       userId,
       ingredientId: ingredientData.ingredientId || generateId(),
       name: ingredientData.name.toLowerCase(),
-      quantity: ingredientData.quantity,
-      unit: ingredientData.unit,
-      expiryDate: ingredientData.expiryDate,
+      quantity: ingredientData.quantity || 1,
+      unit: ingredientData.unit || 'piece',
+      expiryDate: ingredientData.expiryDate || undefined,
       addedAt: now,
     };
 
-    await docClient.send(new PutCommand({
-      TableName: process.env.USER_INGREDIENTS_TABLE,
-      Item: userIngredient,
+    // Remove undefined values to avoid DynamoDB errors
+    const cleanUserIngredient = Object.fromEntries(
+      Object.entries(userIngredient).filter(([_, value]) => value !== undefined)
+    ) as UserIngredient;
+
+    // Get current user data
+    const userResult = await docClient.send(new GetCommand({
+      TableName: process.env.USERS_TABLE,
+      Key: { userId },
     }));
 
-    return createSuccessResponse({ userIngredient }, 201);
+    const currentIngredients = userResult.Item?.ingredients || [];
+    const updatedIngredients = [...currentIngredients, cleanUserIngredient];
+
+    // Update user with new ingredient
+    await docClient.send(new UpdateCommand({
+      TableName: process.env.USERS_TABLE,
+      Key: { userId },
+      UpdateExpression: 'SET ingredients = :ingredients',
+      ExpressionAttributeValues: {
+        ':ingredients': updatedIngredients,
+      },
+    }));
+
+    return createSuccessResponse({ userIngredient: cleanUserIngredient }, 201);
   } catch (_error) {
     return createErrorResponse(400, 'Failed to add ingredient');
   }
@@ -115,11 +132,22 @@ async function removeUserIngredient(ingredientData: any, userId?: string): Promi
       return createErrorResponse(400, 'Ingredient ID required');
     }
 
-    await docClient.send(new DeleteCommand({
-      TableName: process.env.USER_INGREDIENTS_TABLE,
-      Key: {
-        userId,
-        ingredientId,
+    // Get current user data
+    const userResult = await docClient.send(new GetCommand({
+      TableName: process.env.USERS_TABLE,
+      Key: { userId },
+    }));
+
+    const currentIngredients = userResult.Item?.ingredients || [];
+    const updatedIngredients = currentIngredients.filter((ing: any) => ing.ingredientId !== ingredientId);
+
+    // Update user with removed ingredient
+    await docClient.send(new UpdateCommand({
+      TableName: process.env.USERS_TABLE,
+      Key: { userId },
+      UpdateExpression: 'SET ingredients = :ingredients',
+      ExpressionAttributeValues: {
+        ':ingredients': updatedIngredients,
       },
     }));
 

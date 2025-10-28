@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-unused-vars */
 import { EventBridgeEvent } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
@@ -6,7 +8,6 @@ import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
 const snsClient = new SNSClient({});
-
 const USERS_TABLE = process.env.USERS_TABLE!;
 const RECIPES_TABLE = process.env.RECIPES_TABLE!;
 const MATCHES_TABLE = process.env.MATCHES_TABLE!;
@@ -14,7 +15,7 @@ const NOTIFICATIONS_TOPIC_ARN = process.env.NOTIFICATIONS_TOPIC_ARN!;
 
 export const handler = async (event: EventBridgeEvent<string, any>) => {
   try {
-    const { 'detail-type': detailType, source, detail } = event;
+    const { 'detail-type': detailType, detail } = event;
 
     switch (detailType) {
       case 'UserRegistered':
@@ -237,6 +238,7 @@ async function sendNotification(notification: {
   }
 }
 
+// TODO: Implement user analytics
 async function updateUserAnalytics(userId: string, action: string) {
   // This would update user analytics in a separate analytics table
 }

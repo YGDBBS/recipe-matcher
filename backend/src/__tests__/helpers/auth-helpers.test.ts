@@ -7,7 +7,6 @@ import {
 
 // Mock jsonwebtoken
 jest.mock('jsonwebtoken')
-const mockVerify = verify as jest.MockedFunction<typeof verify>
 
 describe('Auth Helpers', () => {
   beforeEach(() => {
