@@ -48,7 +48,7 @@ export class StatefulStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    // GSI1: Find recipes by author
+    // GSI1: Find recipes by user (GSI1PK = USER#u123)
     this.recipesTable.addGlobalSecondaryIndex({
       indexName: 'GSI1',
       partitionKey: { name: 'GSI1PK', type: dynamodb.AttributeType.STRING },

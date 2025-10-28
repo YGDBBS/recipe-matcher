@@ -15,7 +15,8 @@
     "destroy": "cdk destroy",
     "synth": "cdk synth",
     "diff": "cdk diff",
-    "clear-recipes": "ts-node src/scripts/clear-recipes.ts"
+    "clear-recipes": "ts-node src/scripts/clear-recipes.ts",
+    "seed-recipes": "ts-node src/scripts/seed-recipes.ts"
   },
   "keywords": [
     "aws",

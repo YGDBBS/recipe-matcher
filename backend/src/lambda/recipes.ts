@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, ScanCommand, DeleteCommand, BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
 
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
@@ -20,6 +20,7 @@ interface Recipe {
   difficultyLevel: 'easy' | 'medium' | 'hard';
   servings: number;
   dietaryTags: string[];
+  cuisine: string;
   imageUrl?: string;
   createdAt: string;
   updatedAt: string;
@@ -52,6 +53,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     if (path === '/recipes' && httpMethod === 'GET') {
       return await getRecipes(queryStringParameters);
+    }
+
+    if (path === '/recipes/mine' && httpMethod === 'GET') {
+      return await getMyRecipes(userId);
     }
 
     if (path === '/recipes' && httpMethod === 'POST') {
@@ -92,42 +97,82 @@ async function getRecipes(queryParams: any): Promise<APIGatewayProxyResult> {
   };
 
   try {
-    const { ingredient, userId, limit = '20' } = queryParams || {};
-
+    const { ingredient, userId, cuisine, limit = '20' } = queryParams || {};
     let recipes: Recipe[] = [];
 
-    if (ingredient) {
-      // Search by ingredient using GSI
+    // Helper function to extract recipeId from GSI sort key
+    const extractRecipeId = (gsiSK: string): string => {
+      return gsiSK.split('#')[1];
+    };
+
+    // Helper function to fetch METADATA item
+    const fetchMetadata = async (recipeId: string): Promise<Recipe | null> => {
+      const result = await docClient.send(new GetCommand({
+        TableName: process.env.RECIPES_TABLE_V2,
+        Key: { PK: `RECIPE#${recipeId}`, SK: 'METADATA' },
+      }));
+      return result.Item as Recipe || null;
+    };
+
+    if (cuisine) {
+      // Query GSI2 with GSI2PK = `CUISINE#Italian`
       const result = await docClient.send(new QueryCommand({
-        TableName: process.env.RECIPES_TABLE,
-        IndexName: 'ingredients-index',
-        KeyConditionExpression: 'ingredient = :ingredient',
+        TableName: process.env.RECIPES_TABLE_V2,
+        IndexName: 'GSI2',
+        KeyConditionExpression: 'GSI2PK = :cuisine',
         ExpressionAttributeValues: {
-          ':ingredient': ingredient.toLowerCase(),
+          ':cuisine': `CUISINE#${cuisine}`,
         },
         Limit: parseInt(limit),
       }));
-      recipes = result.Items as Recipe[] || [];
-    } else if (userId) {
-      // Get user's recipes
+
+      // Extract recipeIds and fetch METADATA items
+      const recipeIds = [...new Set(result.Items?.map(item => extractRecipeId(item.GSI2SK)) || [])];
+      const metadataItems = await Promise.all(recipeIds.map(fetchMetadata));
+      recipes = metadataItems.filter(item => item !== null) as Recipe[];
+    }
+    else if (ingredient) {
+      // Query GSI3 with GSI3PK = `ING#chicken`
       const result = await docClient.send(new QueryCommand({
-        TableName: process.env.RECIPES_TABLE,
-        IndexName: 'user-recipes-index',
-        KeyConditionExpression: 'userId = :userId',
+        TableName: process.env.RECIPES_TABLE_V2,
+        IndexName: 'GSI3',
+        KeyConditionExpression: 'GSI3PK = :ingredient',
         ExpressionAttributeValues: {
-          ':userId': userId,
+          ':ingredient': `ING#${ingredient.toLowerCase()}`,
+        },
+        Limit: parseInt(limit),
+      }));
+
+      // Extract recipeIds and fetch METADATA items
+      const recipeIds = [...new Set(result.Items?.map(item => extractRecipeId(item.GSI3SK)) || [])];
+      const metadataItems = await Promise.all(recipeIds.map(fetchMetadata));
+      recipes = metadataItems.filter(item => item !== null) as Recipe[];
+    }
+    else if (userId) {
+      // Query GSI1 with GSI1PK = `USER#${userId}`
+      const result = await docClient.send(new QueryCommand({
+        TableName: process.env.RECIPES_TABLE_V2,
+        IndexName: 'GSI1',
+        KeyConditionExpression: 'GSI1PK = :userId',
+        ExpressionAttributeValues: {
+          ':userId': `USER#${userId}`,
         },
         ScanIndexForward: false, // Most recent first
         Limit: parseInt(limit),
       }));
-      recipes = result.Items as Recipe[] || [];
-    } else {
-      // Get all recipes
-      const result = await docClient.send(new ScanCommand({
-        TableName: process.env.RECIPES_TABLE,
-        Limit: parseInt(limit),
-      }));
-      recipes = result.Items as Recipe[] || [];
+
+      // Extract recipeIds and fetch METADATA items
+      const recipeIds = [...new Set(result.Items?.map(item => extractRecipeId(item.GSI1SK)) || [])];
+      const metadataItems = await Promise.all(recipeIds.map(fetchMetadata));
+      recipes = metadataItems.filter(item => item !== null) as Recipe[];
+    }
+    else {
+      // No filter provided - return error
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Please provide cuisine, ingredient, or userId filter' }),
+      };
     }
 
     return {
@@ -141,6 +186,57 @@ async function getRecipes(queryParams: any): Promise<APIGatewayProxyResult> {
       statusCode: 500,
       headers,
       body: JSON.stringify({ error: 'Failed to get recipes' }),
+    };
+  }
+}
+
+async function getMyRecipes(userId?: string): Promise<APIGatewayProxyResult> {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+  };
+
+  try {
+    if (!userId) {
+      return {
+        statusCode: 401,
+        headers,
+        body: JSON.stringify({ error: 'Authorization required' }),
+      };
+    }
+
+    // Query GSI1 with GSI1PK = `USER#${userId}`
+    const result = await docClient.send(new QueryCommand({
+      TableName: process.env.RECIPES_TABLE_V2,
+      IndexName: 'GSI1',
+      KeyConditionExpression: 'GSI1PK = :userId',
+      ExpressionAttributeValues: {
+        ':userId': `USER#${userId}`,
+      },
+      ScanIndexForward: false, // Most recent first
+    }));
+
+    // Extract recipeIds and fetch METADATA items
+    const recipeIds = [...new Set(result.Items?.map(item => item.GSI1SK.split('#')[1]) || [])];
+    const recipes = await Promise.all(recipeIds.map(async (recipeId) => {
+      const metadata = await docClient.send(new GetCommand({
+        TableName: process.env.RECIPES_TABLE_V2,
+        Key: { PK: `RECIPE#${recipeId}`, SK: 'METADATA' },
+      }));
+      return metadata.Item as Recipe;
+    }));
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ recipes }),
+    };
+  } catch (error) {
+    console.error('Get my recipes error:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Failed to get my recipes' }),
     };
   }
 }
@@ -161,10 +257,15 @@ async function createRecipe(recipeData: any, userId?: string): Promise<APIGatewa
     }
     const recipeId = generateId();
     const now = new Date().toISOString();
+    const cuisine = recipeData.cuisine || 'general';
 
-    const recipe: Recipe = {
+    
+    // Build the **METADATA** item – userId comes from the authorizer
+    const metadataItem = {
+      PK: `RECIPE#${recipeId}`,
+      SK: 'METADATA',
       recipeId,
-      userId,
+      userId,                                   // ← forced from authorizer
       title: recipeData.title,
       description: recipeData.description,
       ingredients: recipeData.ingredients || [],
@@ -173,32 +274,62 @@ async function createRecipe(recipeData: any, userId?: string): Promise<APIGatewa
       difficultyLevel: recipeData.difficultyLevel || 'medium',
       servings: recipeData.servings || 4,
       dietaryTags: recipeData.dietaryTags || [],
+      cuisine,
       createdAt: now,
       updatedAt: now,
+
+      GSI1PK: `USER#${userId}`,
+      GSI1SK: `RECIPE#${recipeId}`,
+      GSI2PK: `CUISINE#${cuisine.toLowerCase()}`,
+      GSI2SK: `RECIPE#${recipeId}`,
     };
 
-    // Save recipe
-    await docClient.send(new PutCommand({
-      TableName: process.env.RECIPES_TABLE,
-      Item: recipe,
-    }));
-
-    // Save ingredient mappings for search
-    for (const ingredient of recipe.ingredients) {
-      await docClient.send(new PutCommand({
-        TableName: process.env.RECIPES_TABLE,
-        Item: {
-          recipeId: recipe.recipeId,
-          ingredient: ingredient.name.toLowerCase(),
-          createdAt: now,
+    
+    // ING# items (one per ingredient)
+    const ingItems = (recipeData.ingredients || []).map((ing: any) => {
+      const name = ing.name.toLowerCase().trim();
+      return {
+        PutRequest: {
+          Item: {
+            PK: `RECIPE#${recipeId}`,
+            SK: `ING#${name}`,
+            GSI3PK: `ING#${name}`,
+            GSI3SK: `RECIPE#${recipeId}`,
+            ingredientName: ing.name,
+            quantity: ing.quantity,
+            unit: ing.unit,
+            createdAt: now,
+          },
         },
-      }));
+      };
+    });
+
+    
+    // Batch-write METADATA + ING# items
+    const allRequests = [
+      { PutRequest: { Item: metadataItem } },
+      ...ingItems,
+    ];
+
+    const batchSize = 25;
+    for (let i = 0; i < allRequests.length; i += batchSize) {
+      const batch = allRequests.slice(i, i + batchSize);
+      await docClient.send(
+        new BatchWriteCommand({
+          RequestItems: {
+            [process.env.RECIPES_TABLE_V2!]: batch,
+          },
+        })
+      );
     }
+
+    // Return the clean recipe object (no GSI fields)
+    const { PK, SK, GSI1PK, GSI1SK, GSI2PK, GSI2SK, ...cleanRecipe } = metadataItem;
 
     return {
       statusCode: 201,
       headers,
-      body: JSON.stringify({ recipe }),
+      body: JSON.stringify({ recipe: cleanRecipe }),
     };
   } catch (error) {
     console.error('Create recipe error:', error);
@@ -218,8 +349,8 @@ async function getRecipe(recipeId: string): Promise<APIGatewayProxyResult> {
 
   try {
     const result = await docClient.send(new GetCommand({
-      TableName: process.env.RECIPES_TABLE,
-      Key: { recipeId }, // Use recipeId as primary key only
+      TableName: process.env.RECIPES_TABLE_V2,
+      Key: { PK: `RECIPE#${recipeId}`, SK: 'METADATA' },
     }));
 
     if (!result.Item) {
@@ -260,10 +391,10 @@ async function updateRecipe(recipeId: string, recipeData: any, userId?: string):
       };
     }
 
-    // Get existing recipe
+    // Get existing recipe metadata
     const existingRecipe = await docClient.send(new GetCommand({
-      TableName: process.env.RECIPES_TABLE,
-      Key: { recipeId },
+      TableName: process.env.RECIPES_TABLE_V2,
+      Key: { PK: `RECIPE#${recipeId}`, SK: 'METADATA' },
     }));
 
     if (!existingRecipe.Item) {
@@ -282,17 +413,82 @@ async function updateRecipe(recipeId: string, recipeData: any, userId?: string):
       };
     }
 
-    // Update recipe
+    const now = new Date().toISOString();
+    const cuisine = recipeData.cuisine || existingRecipe.Item.cuisine || 'general';
+
+    // Update recipe metadata
     const updatedRecipe = {
       ...existingRecipe.Item,
       ...recipeData,
-      updatedAt: new Date().toISOString(),
+      cuisine,
+      updatedAt: now,
     };
 
-    await docClient.send(new PutCommand({
-      TableName: process.env.RECIPES_TABLE,
-      Item: updatedRecipe,
+    // Prepare items for batch write
+    const items = [];
+
+    // Updated METADATA item
+    items.push({
+      PutRequest: {
+        Item: {
+          PK: `RECIPE#${recipeId}`,
+          SK: 'METADATA',
+          GSI1PK: `USER#${userId}`,
+          GSI1SK: `RECIPE#${recipeId}`,
+          GSI2PK: `CUISINE#${cuisine.toLowerCase()}`,
+          GSI2SK: `RECIPE#${recipeId}`,
+          ...updatedRecipe,
+        },
+      },
+    });
+
+    // Delete existing ING# items and create new ones
+    const existingIngredients = await docClient.send(new QueryCommand({
+      TableName: process.env.RECIPES_TABLE_V2,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+      ExpressionAttributeValues: {
+        ':pk': `RECIPE#${recipeId}`,
+        ':sk': 'ING#',
+      },
     }));
+
+    // Delete existing ingredient items
+    for (const item of existingIngredients.Items || []) {
+      items.push({
+        DeleteRequest: {
+          Key: { PK: item.PK, SK: item.SK },
+        },
+      });
+    }
+
+    // Create new ING# items
+    for (const ingredient of updatedRecipe.ingredients || []) {
+      items.push({
+        PutRequest: {
+          Item: {
+            PK: `RECIPE#${recipeId}`,
+            SK: `ING#${ingredient.name.toLowerCase()}`,
+            GSI3PK: `ING#${ingredient.name.toLowerCase()}`,
+            GSI3SK: `RECIPE#${recipeId}`,
+            ingredientName: ingredient.name,
+            quantity: ingredient.quantity,
+            unit: ingredient.unit,
+            createdAt: now,
+          },
+        },
+      });
+    }
+
+    // Batch write all items
+    const batchSize = 25;
+    for (let i = 0; i < items.length; i += batchSize) {
+      const batch = items.slice(i, i + batchSize);
+      await docClient.send(new BatchWriteCommand({
+        RequestItems: {
+          [process.env.RECIPES_TABLE_V2!]: batch,
+        },
+      }));
+    }
 
     return {
       statusCode: 200,
@@ -324,10 +520,10 @@ async function deleteRecipe(recipeId: string, userId?: string): Promise<APIGatew
       };
     }
 
-    // Get existing recipe to check ownership
+    // Get existing recipe metadata to check ownership
     const existingRecipe = await docClient.send(new GetCommand({
-      TableName: process.env.RECIPES_TABLE,
-      Key: { recipeId },
+      TableName: process.env.RECIPES_TABLE_V2,
+      Key: { PK: `RECIPE#${recipeId}`, SK: 'METADATA' },
     }));
 
     if (!existingRecipe.Item) {
@@ -346,11 +542,32 @@ async function deleteRecipe(recipeId: string, userId?: string): Promise<APIGatew
       };
     }
 
-    // Delete recipe
-    await docClient.send(new DeleteCommand({
-      TableName: process.env.RECIPES_TABLE,
-      Key: { recipeId },
+    // Get all items for this recipe (METADATA + ING# items)
+    const allItems = await docClient.send(new QueryCommand({
+      TableName: process.env.RECIPES_TABLE_V2,
+      KeyConditionExpression: 'PK = :pk',
+      ExpressionAttributeValues: {
+        ':pk': `RECIPE#${recipeId}`,
+      },
     }));
+
+    // Prepare delete requests
+    const deleteItems = (allItems.Items || []).map(item => ({
+      DeleteRequest: {
+        Key: { PK: item.PK, SK: item.SK },
+      },
+    }));
+
+    // Batch delete all items
+    const batchSize = 25;
+    for (let i = 0; i < deleteItems.length; i += batchSize) {
+      const batch = deleteItems.slice(i, i + batchSize);
+      await docClient.send(new BatchWriteCommand({
+        RequestItems: {
+          [process.env.RECIPES_TABLE_V2!]: batch,
+        },
+      }));
+    }
 
     return {
       statusCode: 200,

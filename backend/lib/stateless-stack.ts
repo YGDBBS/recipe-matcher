@@ -135,6 +135,9 @@ export class StatelessStack extends cdk.Stack {
       handler: 'handler',
     });
 
+    // Add environment variable for the new recipes table
+    recipesLambda.addEnvironment('RECIPES_TABLE_V2', props.statefulStack.recipesTable.tableName);
+
     // Ingredients Lambda
     const ingredientsLambda = new NodejsFunction(this, 'IngredientsLambda', {
       ...commonLambdaProps,
@@ -415,6 +418,9 @@ export class StatelessStack extends cdk.Stack {
     });
     recipesResource.addMethod('GET', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
     recipesResource.addMethod('POST', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
+    
+    const myRecipes = recipesResource.addResource('mine');
+    myRecipes.addMethod('GET', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
     
     const recipeResource = recipesResource.addResource('{id}');
     recipeResource.addCorsPreflight({
