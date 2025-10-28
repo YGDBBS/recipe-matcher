@@ -92,7 +92,7 @@ async function getRecipes(queryParams: any): Promise<APIGatewayProxyResult> {
   };
 
   try {
-    const { ingredient, userId, limit = '20', lastKey } = queryParams || {};
+    const { ingredient, userId, limit = '20' } = queryParams || {};
 
     let recipes: Recipe[] = [];
 

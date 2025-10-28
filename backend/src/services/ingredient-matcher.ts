@@ -275,7 +275,7 @@ export class IngredientMatcher {
         recipeIds.add(recipeId);
       });
     } catch (error) {
-      console.log(`No exact match for ${normalizedIngredient}`);
+      console.error(`No exact match for ${normalizedIngredient}`, error);
     }
     
     // Try variations if no exact match
@@ -288,7 +288,7 @@ export class IngredientMatcher {
             recipeIds.add(recipeId);
           });
         } catch (error) {
-          // Continue to next variation
+          console.error(`No match for ${variation}`, error);
         }
       }
     }

@@ -1,5 +1,4 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals'
-import { verify } from 'jsonwebtoken'
 import { 
   loginUser, 
   registerUser, 

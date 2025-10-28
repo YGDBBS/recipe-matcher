@@ -81,7 +81,7 @@ async function getIngredients(queryParams: any): Promise<APIGatewayProxyResult> 
     }
 
     return createSuccessResponse({ ingredients });
-  } catch (error) {
+  } catch {
     throw { statusCode: 500, message: 'Failed to get ingredients' };
   }
 }
@@ -105,7 +105,7 @@ async function createIngredient(ingredientData: any): Promise<APIGatewayProxyRes
     }));
 
     return createSuccessResponse({ ingredient }, 201);
-  } catch (error) {
+  } catch {
     throw { statusCode: 400, message: 'Failed to create ingredient' };
   }
 }

@@ -203,7 +203,14 @@ export async function registerUser(userData: RegisterRequest, headers: any): Pro
     }
 
     // Remove password hash from response
-    const { passwordHash, ...userWithoutPassword } = user;
+    const userWithoutPassword: Omit<User, 'passwordHash'> = {
+      userId: user.userId,
+      email: user.email,
+      username: user.username,
+      createdAt: user.createdAt,
+      dietaryRestrictions: user.dietaryRestrictions,
+      preferences: user.preferences,
+    };
 
     return {
       statusCode: 201,
@@ -243,7 +250,15 @@ export async function getUserProfile(userId: string, headers: any): Promise<APIG
     }
 
     // Remove password hash from response
-    const { passwordHash, ...userWithoutPassword } = result.Item as User;
+    const userData = result.Item as User;
+    const userWithoutPassword: Omit<User, 'passwordHash'> = {
+      userId: userData.userId,
+      email: userData.email,
+      username: userData.username,
+      createdAt: userData.createdAt,
+      dietaryRestrictions: userData.dietaryRestrictions,
+      preferences: userData.preferences,
+    };
 
     return {
       statusCode: 200,
