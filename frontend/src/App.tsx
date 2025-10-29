@@ -19,6 +19,8 @@ function App() {
   const { showToast, ToastContainer } = useToast();
   const { token, login, logout, isAuthenticated, isLoading: authLoading } = useAuth({ showToast });
   const [activeTab, setActiveTab] = useState<Tab>(isAuthenticated ? 'all' : 'login');
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   // Recipe list state
   const [search, setSearch] = useState('');
@@ -49,13 +51,14 @@ function App() {
   const hasPantrySelection = selectedPantryIngredients.length > 0;
   
   // For "all" tab: use pantry ingredients if selected, otherwise use manual search
+  // Only enable query if authenticated and there are filters
   const allRecipesParams = {
     ingredient: hasManualSearch ? search : undefined,
     cuisine: cuisine || undefined,
-    pantryIngredients: hasPantrySelection && !hasManualSearch ? selectedPantryIngredients : undefined,
+    pantryIngredients: hasPantrySelection && !hasManualSearch && isAuthenticated ? selectedPantryIngredients : undefined,
     pantryItems: isAuthenticated && pantryItems.length > 0 ? pantryItems : undefined, // Include full pantry items for match calculation
     token: token || undefined,
-    enabled: activeTab === 'all' && (hasManualSearch || hasPantrySelection || !!cuisine),
+    enabled: activeTab === 'all' && isAuthenticated && (hasManualSearch || (hasPantrySelection && isAuthenticated) || !!cuisine),
   };
   
   const allRecipesQuery = useAllRecipes(allRecipesParams);
@@ -92,12 +95,25 @@ function App() {
     [login, showToast]
   );
 
-  // Handle logout
+  // Handle logout with smooth animation
   const handleLogout = useCallback(() => {
-    logout();
-    setActiveTab('all');
-    // Pantry query will automatically return empty array when token is null
-  }, [logout]);
+    setIsLoggingOut(true);
+    
+    // Show friendly message
+    showToast('See you again soon for more recipe ideas! 👋', 'info');
+    
+    // Delay actual logout to show animation
+    setTimeout(() => {
+      logout();
+      setActiveTab('login');
+      // Clear all search/filter state
+      setSearch('');
+      setCuisine('');
+      setSelectedPantryIngredients([]);
+      setIsLoggingOut(false);
+      // Pantry query will automatically return empty array when token is null
+    }, 2800); // 2.8 seconds delay to show the friendly message
+  }, [logout, showToast]);
 
 
   // Create recipe
@@ -105,10 +121,34 @@ function App() {
     setActiveTab('mine');
   }, []);
 
+  // Show welcome animation whenever landing on login page
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated && activeTab === 'login') {
+      // Show welcome animation every time user lands on login page
+      setShowWelcome(true);
+      // Auto-hide after animation duration
+      const timer = setTimeout(() => {
+        setShowWelcome(false);
+      }, 2800);
+      
+      // Cleanup timer if component unmounts or dependencies change
+      return () => clearTimeout(timer);
+    } else if (isAuthenticated || activeTab !== 'login') {
+      // Hide welcome if user becomes authenticated or navigates away
+      setShowWelcome(false);
+    }
+  }, [authLoading, isAuthenticated, activeTab]);
+
   // Update active tab when auth changes
   useEffect(() => {
     if (!isAuthenticated && activeTab !== 'all' && activeTab !== 'login') {
       setActiveTab('login');
+    }
+    // When logging out, clear search state
+    if (!isAuthenticated) {
+      setSearch('');
+      setCuisine('');
+      setSelectedPantryIngredients([]);
     }
   }, [isAuthenticated, activeTab]);
 
@@ -122,10 +162,33 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFFBEB]">
-      <Header onLogout={handleLogout} isAuthenticated={isAuthenticated} />
+    <div className="min-h-screen bg-[#FFFBEB] relative">
+      {/* Welcome Overlay */}
+      {showWelcome && (
+        <div className="fixed inset-0 bg-[#FFFBEB]/95 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
+          <div className="text-center space-y-4 animate-slide-up">
+            <div className="text-6xl mb-4 animate-bounce">👨‍🍳</div>
+            <h2 className="text-2xl font-bold text-[#1F2937]">Welcome to Recipe Matcher!</h2>
+            <p className="text-[#6B7280] text-lg">Discover delicious recipes, add ingredients to your panty and let us do the rest!</p>
+          </div>
+        </div>
+      )}
 
-      <Tabs active={activeTab} onChange={setActiveTab} isAuthenticated={isAuthenticated} />
+      {/* Logout Overlay */}
+      {isLoggingOut && (
+        <div className="fixed inset-0 bg-[#FFFBEB]/95 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
+          <div className="text-center space-y-4 animate-slide-up">
+            <div className="text-6xl mb-4 animate-bounce">👋</div>
+            <h2 className="text-2xl font-bold text-[#1F2937]">See you soon!</h2>
+            <p className="text-[#6B7280] text-lg">Thanks for cooking with us today</p>
+          </div>
+        </div>
+      )}
+
+      <div className={(isLoggingOut || showWelcome) ? 'opacity-0 transition-opacity duration-500' : 'opacity-100 transition-opacity duration-500'}>
+        <Header onLogout={handleLogout} isAuthenticated={isAuthenticated} />
+
+        <Tabs active={activeTab} onChange={setActiveTab} isAuthenticated={isAuthenticated} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -178,19 +241,22 @@ function App() {
               />
             )}
 
-            <RecipeGrid
-              recipes={recipes}
-              isLoading={loading}
-              emptyMessage={
-                activeTab === 'mine' ? (
-                  'You have no recipes yet. Create one!'
-                ) : activeTab === 'all' && !search && !selectedPantryIngredients.length && !cuisine ? (
-                  'Enter an ingredient, select pantry ingredients, or choose a cuisine to search for recipes.'
-                ) : (
-                  'No recipes found. Try different filters.'
-                )
-              }
-            />
+            {/* Only show RecipeGrid when authenticated or when filters are applied */}
+            {(isAuthenticated || search || cuisine || selectedPantryIngredients.length > 0) && (
+              <RecipeGrid
+                recipes={recipes}
+                isLoading={loading}
+                emptyMessage={
+                  activeTab === 'mine' ? (
+                    'You have no recipes yet. Create one!'
+                  ) : activeTab === 'all' && !search && !selectedPantryIngredients.length && !cuisine ? (
+                    'Enter an ingredient, select pantry ingredients, or choose a cuisine to search for recipes.'
+                  ) : (
+                    'No recipes found. Try different filters.'
+                  )
+                }
+              />
+            )}
 
             {!isAuthenticated && activeTab === 'all' && (
               <div className="mt-8">
@@ -216,8 +282,9 @@ function App() {
         )}
       </main>
 
-      {/* Toast Container */}
-      <ToastContainer />
+        {/* Toast Container */}
+        <ToastContainer />
+      </div>
     </div>
   );
 }
