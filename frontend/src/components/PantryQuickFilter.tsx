@@ -13,11 +13,11 @@ export default function PantryQuickFilter({ pantryItems, selected, onToggle, onC
   }
 
   return (
-    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6">
+    <div className="bg-[#FFF7ED] border border-[#F97316]/20 rounded-lg p-4 mb-6">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-emerald-900">Your Pantry:</span>
-          <span className="text-xs text-emerald-700">
+          <span className="text-sm font-semibold text-[#F97316]">Your Pantry:</span>
+          <span className="text-xs text-[#F97316]">
             {selected.length > 0 
               ? `${selected.length} selected - Finding recipes with all selected ingredients`
               : 'Click ingredients to find recipes, you can select multiple ingredients to find recipes with all of them'}
@@ -26,7 +26,7 @@ export default function PantryQuickFilter({ pantryItems, selected, onToggle, onC
         {selected.length > 0 && (
           <button
             onClick={onClear}
-            className="text-xs text-emerald-700 hover:text-emerald-900 underline"
+            className="text-xs text-[#F97316] hover:text-[#EA580C] underline"
           >
             Clear Selection
           </button>
@@ -42,8 +42,8 @@ export default function PantryQuickFilter({ pantryItems, selected, onToggle, onC
               onClick={() => onToggle(normalizedName)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center gap-1 ${
                 isSelected
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-100'
+                  ? 'bg-[#F97316] text-white shadow-sm'
+                  : 'bg-white text-[#F97316] border border-[#E5E7EB] hover:bg-[#FFF7ED]'
               }`}
               title={
                 isSelected 

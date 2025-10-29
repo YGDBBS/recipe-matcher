@@ -67,38 +67,38 @@ export default function PantryManager() {
   return (
     <div className="space-y-6">
       {/* Add Ingredient Form */}
-      <div className="bg-white border rounded-lg p-6">
-        <h2 className="text-2xl font-bold mb-4">Add to Pantry</h2>
+      <div className="bg-white border border-[#E5E7EB] rounded-lg p-6">
+        <h2 className="text-2xl font-bold mb-4 text-[#1F2937]">Add to Pantry</h2>
         <form onSubmit={handleAddPantryIngredient} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ingredient Name</label>
+              <label className="block text-sm font-medium text-[#1F2937] mb-1">Ingredient Name</label>
               <input
                 type="text"
                 value={newIngredientName}
                 onChange={(e) => setNewIngredientName(e.target.value)}
                 placeholder="e.g. Chicken, Tomatoes, Cheese"
-                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+              <label className="block text-sm font-medium text-[#1F2937] mb-1">Quantity</label>
               <input
                 type="number"
                 min={0.1}
                 step={0.1}
                 value={newIngredientQuantity}
                 onChange={(e) => setNewIngredientQuantity(parseFloat(e.target.value) || 1)}
-                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+              <label className="block text-sm font-medium text-[#1F2937] mb-1">Unit</label>
               <select
                 value={newIngredientUnit}
                 onChange={(e) => setNewIngredientUnit(e.target.value)}
-                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               >
                 <option value="piece">piece</option>
                 <option value="cup">cup</option>
@@ -116,7 +116,7 @@ export default function PantryManager() {
           <button
             type="submit"
             disabled={addPantryItem.isPending}
-            className="px-6 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2"
+            className="px-6 py-2 bg-[#F97316] text-white rounded hover:bg-[#EA580C] disabled:opacity-50 flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             {addPantryItem.isPending ? 'Adding...' : 'Add to Pantry'}
@@ -125,12 +125,12 @@ export default function PantryManager() {
       </div>
 
       {/* Pantry Items */}
-      <div className="bg-white border rounded-lg p-6">
-        <h2 className="text-2xl font-bold mb-4">My Pantry ({pantryItems.length})</h2>
+      <div className="bg-white border border-[#E5E7EB] rounded-lg p-6">
+        <h2 className="text-2xl font-bold mb-4 text-[#1F2937]">My Pantry ({pantryItems.length})</h2>
         {loadingPantry ? (
-          <div className="text-center py-12 text-gray-600">Loading pantry...</div>
+          <div className="text-center py-12 text-[#6B7280]">Loading pantry...</div>
         ) : pantryItems.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-[#6B7280]">
             Your pantry is empty. Add ingredients to get started!
           </div>
         ) : (
@@ -138,11 +138,11 @@ export default function PantryManager() {
             {pantryItems.map((item) => (
               <div
                 key={item.ingredientId}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded border hover:bg-gray-100"
+                className="flex items-center justify-between p-3 bg-[#FFFBEB] rounded border border-[#E5E7EB] hover:bg-[#FFF7ED]"
               >
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900">{item.name}</div>
-                  <div className="text-sm text-gray-600">
+                  <div className="font-medium text-[#1F2937]">{item.name}</div>
+                  <div className="text-sm text-[#6B7280]">
                     {item.quantity} {item.unit}
                   </div>
                 </div>

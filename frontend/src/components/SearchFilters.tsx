@@ -12,22 +12,22 @@ interface SearchFiltersProps {
 
 export default function SearchFilters({ search, setSearch, cuisine, setCuisine, onReset }: SearchFiltersProps) {
   return (
-    <div className="bg-white border rounded-lg p-4 mb-6">
+    <div className="bg-white border border-[#E5E7EB] rounded-lg p-4 mb-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
           <input
             type="text"
             placeholder="Search by ingredient (e.g. chicken)"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full pl-10 pr-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
           />
         </div>
         <select
           value={cuisine}
           onChange={(e) => setCuisine(e.target.value)}
-          className="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
         >
           <option value="">All cuisines</option>
           {cuisines.map((c) => (
@@ -38,7 +38,7 @@ export default function SearchFilters({ search, setSearch, cuisine, setCuisine, 
         </select>
         <button
           onClick={onReset}
-          className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+          className="px-4 py-2 bg-white border border-[#E5E7EB] text-[#6B7280] rounded hover:bg-[#FFF7ED]"
         >
           Reset
         </button>

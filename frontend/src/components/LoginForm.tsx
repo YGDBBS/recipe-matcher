@@ -38,38 +38,38 @@ export default function LoginForm({ onSuccess }: Props) {
   };
 
   return (
-    <div className="bg-white border rounded-lg p-6 max-w-md mx-auto">
-      <h2 className="text-2xl font-bold mb-4">{isRegister ? 'Register' : 'Login'}</h2>
+    <div className="bg-white border border-[#E5E7EB] rounded-lg p-6 max-w-md mx-auto">
+      <h2 className="text-2xl font-bold mb-4 text-[#1F2937]">{isRegister ? 'Register' : 'Login'}</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         {isRegister && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <label className="block text-sm font-medium text-[#1F2937] mb-1">Username</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               required
             />
           </div>
         )}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <label className="block text-sm font-medium text-[#1F2937] mb-1">Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <label className="block text-sm font-medium text-[#1F2937] mb-1">Password</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
             required
           />
         </div>
@@ -77,7 +77,7 @@ export default function LoginForm({ onSuccess }: Props) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50"
+          className="w-full px-4 py-2 bg-[#F97316] text-white rounded hover:bg-[#EA580C] disabled:opacity-50"
         >
           {loading ? 'Loading...' : isRegister ? 'Register' : 'Login'}
         </button>
@@ -87,7 +87,7 @@ export default function LoginForm({ onSuccess }: Props) {
             setIsRegister(!isRegister);
             setError('');
           }}
-          className="w-full text-sm text-gray-600 hover:text-gray-800"
+          className="w-full text-sm text-[#6B7280] hover:text-[#F97316]"
         >
           {isRegister ? 'Already have an account? Login' : "Don't have an account? Register"}
         </button>

@@ -10,13 +10,13 @@ interface RecipeGridProps {
 export default function RecipeGrid({ recipes, isLoading, emptyMessage }: RecipeGridProps) {
   if (isLoading) {
     return (
-      <div className="text-center py-12 text-gray-600">Loading recipes...</div>
+      <div className="text-center py-12 text-[#6B7280]">Loading recipes...</div>
     );
   }
 
   if (recipes.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
+      <div className="text-center py-12 text-[#6B7280]">
         {emptyMessage}
       </div>
     );

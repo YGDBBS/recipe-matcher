@@ -12,12 +12,21 @@ function ToastContainer({ toasts, removeToast }: { toasts: Toast[]; removeToast:
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 ${
-            toast.type === 'error' ? 'bg-red-100 text-red-800' : toast.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+          className={`px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 border ${
+            toast.type === 'error' 
+              ? 'bg-red-50 text-red-800 border-red-200' 
+              : toast.type === 'success' 
+              ? 'bg-[#FFF7ED] text-[#F97316] border-[#F97316]/20' 
+              : 'bg-[#FEF3C7] text-[#F97316] border-[#FACC15]/30'
           }`}
         >
           <span>{toast.message}</span>
-          <button onClick={() => removeToast(toast.id)} className="ml-2 font-bold">×</button>
+          <button 
+            onClick={() => removeToast(toast.id)} 
+            className="ml-2 font-bold hover:text-[#F97316]"
+          >
+            ×
+          </button>
         </div>
       ))}
     </div>

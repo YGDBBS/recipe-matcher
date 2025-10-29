@@ -85,26 +85,26 @@ export default function CreateRecipeForm({ onSuccess }: CreateRecipeFormProps) {
   };
 
   return (
-    <div className="bg-white border rounded-lg p-6">
-      <h2 className="text-2xl font-bold mb-6">Create Recipe</h2>
+    <div className="bg-white border border-[#E5E7EB] rounded-lg p-6">
+      <h2 className="text-2xl font-bold mb-6 text-[#1F2937]">Create Recipe</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+          <label className="block text-sm font-medium text-[#1F2937] mb-1">Title</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
             required
           />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cuisine</label>
+            <label className="block text-sm font-medium text-[#1F2937] mb-1">Cuisine</label>
             <select
               value={cuisine}
               onChange={(e) => setCuisine(e.target.value)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
               required
             >
               <option value="">Select cuisine</option>
@@ -116,28 +116,28 @@ export default function CreateRecipeForm({ onSuccess }: CreateRecipeFormProps) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cooking Time (min)</label>
+            <label className="block text-sm font-medium text-[#1F2937] mb-1">Cooking Time (min)</label>
             <input
               type="number"
               min={1}
               value={cookingTime}
               onChange={(e) => setCookingTime(parseInt(e.target.value) || 30)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Servings</label>
+            <label className="block text-sm font-medium text-[#1F2937] mb-1">Servings</label>
             <input
               type="number"
               min={1}
               value={servings}
               onChange={(e) => setServings(parseInt(e.target.value) || 2)}
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
             />
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Ingredients</label>
+          <label className="block text-sm font-medium text-[#1F2937] mb-2">Ingredients</label>
           <div className="space-y-2">
             {ingredients.map((ing, idx) => (
               <div key={idx} className="grid grid-cols-12 gap-2">
@@ -149,7 +149,7 @@ export default function CreateRecipeForm({ onSuccess }: CreateRecipeFormProps) {
                     newIngredients[idx].name = e.target.value;
                     setIngredients(newIngredients);
                   }}
-                  className="col-span-5 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="col-span-5 px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
                 />
                 <input
                   placeholder="Qty"
@@ -159,7 +159,7 @@ export default function CreateRecipeForm({ onSuccess }: CreateRecipeFormProps) {
                     newIngredients[idx].quantity = e.target.value;
                     setIngredients(newIngredients);
                   }}
-                  className="col-span-3 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="col-span-3 px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
                 />
                 <input
                   placeholder="Unit"
@@ -169,7 +169,7 @@ export default function CreateRecipeForm({ onSuccess }: CreateRecipeFormProps) {
                     newIngredients[idx].unit = e.target.value;
                     setIngredients(newIngredients);
                   }}
-                  className="col-span-3 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="col-span-3 px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
                 />
                 <button
                   type="button"
@@ -183,9 +183,9 @@ export default function CreateRecipeForm({ onSuccess }: CreateRecipeFormProps) {
             <button
               type="button"
               onClick={() => setIngredients([...ingredients, { name: '', quantity: '', unit: '' }])}
-              className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
+              className="flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] text-[#6B7280] rounded hover:bg-[#FFF7ED]"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 text-[#F97316]" />
               Add Ingredient
             </button>
           </div>
@@ -193,7 +193,7 @@ export default function CreateRecipeForm({ onSuccess }: CreateRecipeFormProps) {
         <button
           type="submit"
           disabled={createRecipeMutation.isPending}
-          className="px-6 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50"
+          className="px-6 py-2 bg-[#F97316] text-white rounded hover:bg-[#EA580C] disabled:opacity-50"
         >
           {createRecipeMutation.isPending ? 'Creating...' : 'Create Recipe'}
         </button>

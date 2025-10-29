@@ -53,12 +53,17 @@ function App() {
     ingredient: hasManualSearch ? search : undefined,
     cuisine: cuisine || undefined,
     pantryIngredients: hasPantrySelection && !hasManualSearch ? selectedPantryIngredients : undefined,
+    pantryItems: isAuthenticated && pantryItems.length > 0 ? pantryItems : undefined, // Include full pantry items for match calculation
     token: token || undefined,
     enabled: activeTab === 'all' && (hasManualSearch || hasPantrySelection || !!cuisine),
   };
   
   const allRecipesQuery = useAllRecipes(allRecipesParams);
-  const myRecipesQuery = useMyRecipes(token, activeTab === 'mine');
+  const myRecipesQuery = useMyRecipes(
+    token,
+    activeTab === 'mine',
+    isAuthenticated && pantryItems.length > 0 ? pantryItems : undefined
+  );
 
   // Determine which query result to use
   const recipesQuery = activeTab === 'mine' ? myRecipesQuery : allRecipesQuery;
@@ -110,14 +115,14 @@ function App() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+      <div className="min-h-screen bg-[#FFFBEB] flex items-center justify-center">
+        <div className="text-[#6B7280]">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#FFFBEB]">
       <Header onLogout={handleLogout} isAuthenticated={isAuthenticated} />
 
       <Tabs active={activeTab} onChange={setActiveTab} isAuthenticated={isAuthenticated} />

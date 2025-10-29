@@ -1,11 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type { Recipe } from '@/lib/api';
+import type { UserIngredient } from '@/lib/api';
+import { enhanceRecipesWithMatch } from '@/utils/matchCalculator';
 
 interface UseAllRecipesParams {
   ingredient?: string;
   cuisine?: string;
   pantryIngredients?: string[];
+  pantryItems?: UserIngredient[]; // Full pantry items for match calculation
   token?: string;
   enabled: boolean;
 }
@@ -54,6 +57,11 @@ export function useAllRecipes(params: UseAllRecipesParams) {
           commonRecipes = commonRecipes.filter(r => recipeIds.has(r.recipeId));
         }
 
+        // Calculate match percentages if pantry items are available
+        if (params.pantryItems && params.pantryItems.length > 0) {
+          return enhanceRecipesWithMatch(commonRecipes, params.pantryItems);
+        }
+
         return commonRecipes;
       } else {
         // Single ingredient or cuisine search
@@ -71,20 +79,38 @@ export function useAllRecipes(params: UseAllRecipesParams) {
           throw new Error(response.error);
         }
 
-        return response.data?.recipes || [];
+        const recipes = response.data?.recipes || [];
+
+        // Calculate match percentages if pantry items are available
+        if (params.pantryItems && params.pantryItems.length > 0) {
+          return enhanceRecipesWithMatch(recipes, params.pantryItems);
+        }
+
+        return recipes;
       }
     },
     enabled: params.enabled,
   });
 }
 
-export function useMyRecipes(token: string | null, enabled: boolean = true) {
+export function useMyRecipes(
+  token: string | null,
+  enabled: boolean = true,
+  pantryItems?: UserIngredient[]
+) {
   return useQuery<Recipe[]>({
-    queryKey: ['my-recipes'],
+    queryKey: ['my-recipes', { hasPantryItems: !!pantryItems && pantryItems.length > 0 }],
     queryFn: async (): Promise<Recipe[]> => {
       if (!token) throw new Error('Token required');
       const r = await api.getMyRecipes(token);
-      return r.data?.recipes ?? [];
+      const recipes = r.data?.recipes ?? [];
+
+      // Calculate match percentages if pantry items are available
+      if (pantryItems && pantryItems.length > 0) {
+        return enhanceRecipesWithMatch(recipes, pantryItems);
+      }
+
+      return recipes;
     },
     enabled: enabled && !!token,
   });
