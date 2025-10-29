@@ -90,6 +90,41 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   }
 };
 
+// Helper function to fetch METADATA item with ingredients
+async function fetchMetadata(recipeId: string): Promise<Recipe | null> {
+      const result = await docClient.send(new GetCommand({
+        TableName: process.env.RECIPES_TABLE_V2,
+        Key: { PK: `RECIPE#${recipeId}`, SK: 'METADATA' },
+      }));
+      
+      if (!result.Item) {
+        return null;
+      }
+
+      const recipe = result.Item as Recipe;
+
+      // If ingredients are not in METADATA, fetch them from ING# items
+      if (!recipe.ingredients || recipe.ingredients.length === 0) {
+        const ingResult = await docClient.send(new QueryCommand({
+          TableName: process.env.RECIPES_TABLE_V2,
+          KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+          ExpressionAttributeValues: {
+            ':pk': `RECIPE#${recipeId}`,
+            ':sk': 'ING#',
+          },
+        }));
+
+        // Reconstruct ingredients array from ING# items
+        recipe.ingredients = (ingResult.Items || []).map(item => ({
+          name: item.ingredientName || item.ingredient || '',
+          quantity: item.quantity || '1',
+          unit: item.unit || 'piece',
+        }));
+      }
+
+      return recipe;
+}
+
 async function getRecipes(queryParams: any): Promise<APIGatewayProxyResult> {
   const headers = {
     'Content-Type': 'application/json',
@@ -103,15 +138,6 @@ async function getRecipes(queryParams: any): Promise<APIGatewayProxyResult> {
     // Helper function to extract recipeId from GSI sort key
     const extractRecipeId = (gsiSK: string): string => {
       return gsiSK.split('#')[1];
-    };
-
-    // Helper function to fetch METADATA item
-    const fetchMetadata = async (recipeId: string): Promise<Recipe | null> => {
-      const result = await docClient.send(new GetCommand({
-        TableName: process.env.RECIPES_TABLE_V2,
-        Key: { PK: `RECIPE#${recipeId}`, SK: 'METADATA' },
-      }));
-      return result.Item as Recipe || null;
     };
 
     if (cuisine) {
@@ -216,15 +242,9 @@ async function getMyRecipes(userId?: string): Promise<APIGatewayProxyResult> {
       ScanIndexForward: false, // Most recent first
     }));
 
-    // Extract recipeIds and fetch METADATA items
+    // Extract recipeIds and fetch METADATA items (with ingredients)
     const recipeIds = [...new Set(result.Items?.map(item => item.GSI1SK.split('#')[1]) || [])];
-    const recipes = await Promise.all(recipeIds.map(async (recipeId) => {
-      const metadata = await docClient.send(new GetCommand({
-        TableName: process.env.RECIPES_TABLE_V2,
-        Key: { PK: `RECIPE#${recipeId}`, SK: 'METADATA' },
-      }));
-      return metadata.Item as Recipe;
-    }));
+    const recipes = await Promise.all(recipeIds.map(fetchMetadata));
 
     return {
       statusCode: 200,
@@ -348,12 +368,10 @@ async function getRecipe(recipeId: string): Promise<APIGatewayProxyResult> {
   };
 
   try {
-    const result = await docClient.send(new GetCommand({
-      TableName: process.env.RECIPES_TABLE_V2,
-      Key: { PK: `RECIPE#${recipeId}`, SK: 'METADATA' },
-    }));
+    // Reuse fetchMetadata helper to get recipe with ingredients
+    const recipe = await fetchMetadata(recipeId);
 
-    if (!result.Item) {
+    if (!recipe) {
       return {
         statusCode: 404,
         headers,
@@ -364,7 +382,7 @@ async function getRecipe(recipeId: string): Promise<APIGatewayProxyResult> {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ recipe: result.Item }),
+      body: JSON.stringify({ recipe }),
     };
   } catch (error) {
     console.error('Get recipe error:', error);
