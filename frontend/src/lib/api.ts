@@ -22,6 +22,7 @@ export interface Recipe {
   difficultyLevel: 'easy' | 'medium' | 'hard';
   servings: number;
   dietaryTags?: string[];
+  cuisine?: string;
   imageUrl?: string;
   matchPercentage?: number;
   missingIngredients?: string[];
@@ -110,15 +111,32 @@ export const api = {
   async getRecipes(params?: {
     ingredient?: string;
     userId?: string;
+    cuisine?: string;
     limit?: number;
+    token?: string;
   }): Promise<ApiResponse<{ recipes: Recipe[] }>> {
     const queryParams = new URLSearchParams();
     if (params?.ingredient) queryParams.append('ingredient', params.ingredient);
     if (params?.userId) queryParams.append('userId', params.userId);
+    if (params?.cuisine) queryParams.append('cuisine', params.cuisine);
     if (params?.limit) queryParams.append('limit', params.limit.toString());
 
     const queryString = queryParams.toString();
-    return apiCall(`/recipes${queryString ? `?${queryString}` : ''}`);
+    const headers: Record<string, string> = {};
+    if (params?.token) {
+      headers.Authorization = `Bearer ${params.token}`;
+    }
+    return apiCall(`/recipes${queryString ? `?${queryString}` : ''}`, {
+      headers,
+    });
+  },
+
+  async getMyRecipes(token: string): Promise<ApiResponse<{ recipes: Recipe[] }>> {
+    return apiCall('/recipes/mine', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
   },
 
   async getRecipe(id: string): Promise<ApiResponse<{ recipe: Recipe }>> {

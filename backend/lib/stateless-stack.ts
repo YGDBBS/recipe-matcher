@@ -420,6 +420,11 @@ export class StatelessStack extends cdk.Stack {
     recipesResource.addMethod('POST', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
     
     const myRecipes = recipesResource.addResource('mine');
+    myRecipes.addCorsPreflight({
+      allowOrigins: apigateway.Cors.ALL_ORIGINS,
+      allowMethods: ['GET', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+    });
     myRecipes.addMethod('GET', new apigateway.LambdaIntegration(recipesLambda), { authorizer });
     
     const recipeResource = recipesResource.addResource('{id}');

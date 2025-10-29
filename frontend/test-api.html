@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        button { margin: 5px; padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 3px; white-space: pre-wrap; }
+        input { margin: 5px; padding: 8px; border: 1px solid #ccc; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Recipe Matcher API Test</h1>
+    
+    <div class="test-section">
+        <h3>Authentication</h3>
+        <input type="email" id="email" placeholder="Email" value="test2@example.com">
+        <input type="password" id="password" placeholder="Password" value="password123">
+        <button onclick="login()">Login</button>
+        <div id="auth-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>API Tests</h3>
+        <button onclick="testMyRecipes()">Test GET /recipes/mine</button>
+        <button onclick="testCuisineFilter()">Test Cuisine Filter</button>
+        <button onclick="testIngredientFilter()">Test Ingredient Filter</button>
+        <button onclick="testCreateRecipe()">Test Create Recipe</button>
+        <div id="api-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://wrkkwv7lrb.execute-api.eu-west-1.amazonaws.com/prod';
+        let token = '';
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                document.getElementById('auth-result').textContent = JSON.stringify(data, null, 2);
+                
+                if (data.token) {
+                    token = data.token;
+                    document.getElementById('auth-result').textContent += '\n\n✅ Login successful! Token saved.';
+                }
+            } catch (error) {
+                document.getElementById('auth-result').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function testMyRecipes() {
+            if (!token) {
+                document.getElementById('api-result').textContent = 'Please login first!';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/recipes/mine`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                document.getElementById('api-result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('api-result').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function testCuisineFilter() {
+            if (!token) {
+                document.getElementById('api-result').textContent = 'Please login first!';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/recipes?cuisine=Mediterranean`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                document.getElementById('api-result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('api-result').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function testIngredientFilter() {
+            if (!token) {
+                document.getElementById('api-result').textContent = 'Please login first!';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/recipes?ingredient=feta`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                document.getElementById('api-result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('api-result').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function testCreateRecipe() {
+            if (!token) {
+                document.getElementById('api-result').textContent = 'Please login first!';
+                return;
+            }
+            
+            try {
+                const recipe = {
+                    title: "Frontend Test Recipe",
+                    cuisine: "Test",
+                    ingredients: [
+                        { name: "test ingredient", amount: "1 cup" }
+                    ],
+                    instructions: ["Test instruction"],
+                    cookingTime: 30,
+                    difficultyLevel: "easy",
+                    servings: 2
+                };
+                
+                const response = await fetch(`${API_URL}/recipes`, {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(recipe)
+                });
+                const data = await response.json();
+                document.getElementById('api-result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('api-result').textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
