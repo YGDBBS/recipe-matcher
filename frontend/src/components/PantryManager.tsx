@@ -26,11 +26,9 @@ export default function PantryManager() {
 
     addPantryItem.mutate(
       {
-        ingredient: {
-          name: newIngredientName.trim(),
-          quantity: newIngredientQuantity,
-          unit: newIngredientUnit,
-        },
+        name: newIngredientName.trim(),
+        quantity: newIngredientQuantity,
+        unit: newIngredientUnit,
         token,
       },
       {

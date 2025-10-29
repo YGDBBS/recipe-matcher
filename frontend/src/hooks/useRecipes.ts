@@ -1,36 +1,31 @@
 import { useQuery } from '@tanstack/react-query';
-import { api, type Recipe } from '@/lib/api';
+import { api } from '@/lib/api';
+import type { Recipe } from '@/lib/api';
 
 interface UseAllRecipesParams {
   ingredient?: string;
   cuisine?: string;
   pantryIngredients?: string[];
   token?: string;
-  enabled?: boolean;
+  enabled: boolean;
 }
 
-export function useAllRecipes({ 
-  ingredient, 
-  cuisine, 
-  pantryIngredients = [], 
-  token,
-  enabled = true,
-}: UseAllRecipesParams = {}) {
-  return useQuery({
-    queryKey: ['recipes', ingredient, cuisine, [...pantryIngredients].sort().join(','), token],
+export function useAllRecipes(params: UseAllRecipesParams) {
+  return useQuery<Recipe[]>({
+    queryKey: ['recipes', { ingredient: params.ingredient, cuisine: params.cuisine, pantryIngredients: params.pantryIngredients }],
     queryFn: async (): Promise<Recipe[]> => {
-      // If pantry ingredients are selected, make multiple calls and intersect
-      if (pantryIngredients.length > 0) {
-        const ingredientPromises = pantryIngredients.map(ing =>
+      if (params.pantryIngredients && params.pantryIngredients.length > 0) {
+        // Make multiple calls for each pantry ingredient
+        const ingredientPromises = params.pantryIngredients.map(ing =>
           api.getRecipes({
             ingredient: ing,
-            cuisine: cuisine || undefined,
-            token: token || undefined,
+            cuisine: params.cuisine,
+            token: params.token,
           })
         );
 
         const results = await Promise.all(ingredientPromises);
-        
+
         // Check for errors
         const errorResult = results.find(r => r.error);
         if (errorResult?.error) {
@@ -41,17 +36,18 @@ export function useAllRecipes({
           throw new Error(errorResult.error);
         }
 
-        // Intersect results: find recipes that appear in ALL ingredient results
+        // Extract recipe lists
         const recipeLists = results.map(r => r.data?.recipes || []);
-        
+
         if (recipeLists.length === 0) {
           return [];
         }
 
+        // Intersect results: find recipes that appear in ALL ingredient results
         // Start with first list
         let commonRecipes = recipeLists[0];
-        
-        // Keep only recipes that exist in all lists
+
+        // Keep only recipes that exist in all lists (by recipeId)
         for (let i = 1; i < recipeLists.length; i++) {
           const currentList = recipeLists[i];
           const recipeIds = new Set(currentList.map(r => r.recipeId));
@@ -61,15 +57,10 @@ export function useAllRecipes({
         return commonRecipes;
       } else {
         // Single ingredient or cuisine search
-        if (!ingredient && !cuisine) {
-          // No filters provided - return empty
-          return [];
-        }
-
         const response = await api.getRecipes({
-          ingredient: ingredient || undefined,
-          cuisine: cuisine || undefined,
-          token: token || undefined,
+          ingredient: params.ingredient,
+          cuisine: params.cuisine,
+          token: params.token,
         });
 
         if (response.error) {
@@ -83,24 +74,18 @@ export function useAllRecipes({
         return response.data?.recipes || [];
       }
     },
-    enabled: enabled && (!!ingredient || !!cuisine || pantryIngredients.length > 0),
+    enabled: params.enabled,
   });
 }
 
 export function useMyRecipes(token: string | null, enabled: boolean = true) {
-  return useQuery({
-    queryKey: ['my-recipes', token],
+  return useQuery<Recipe[]>({
+    queryKey: ['my-recipes'],
     queryFn: async (): Promise<Recipe[]> => {
-      if (!token) {
-        return [];
-      }
-      const response = await api.getMyRecipes(token);
-      if (response.error) {
-        throw new Error(response.error);
-      }
-      return response.data?.recipes || [];
+      if (!token) throw new Error('Token required');
+      const r = await api.getMyRecipes(token);
+      return r.data?.recipes ?? [];
     },
     enabled: enabled && !!token,
   });
 }
-
