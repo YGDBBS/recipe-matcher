@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
-import Tabs from '@/components/Tabs';
-import type { Tab } from '@/components/Tabs';
 import SearchFilters from '@/components/SearchFilters';
 import PantryQuickFilter from '@/components/PantryQuickFilter';
 import RecipeGrid from '@/components/RecipeGrid';
@@ -14,6 +12,8 @@ import { usePantry } from '@/hooks/usePantry';
 import LoginForm from './components/LoginForm';
 
 
+
+type Tab = 'all' | 'mine' | 'create' | 'pantry' | 'login';
 
 function App() {
   const { showToast, ToastContainer } = useToast();
@@ -165,8 +165,20 @@ function App() {
     <div className="min-h-screen bg-[#FFFBEB] relative">
       {/* Welcome Overlay */}
       {showWelcome && (
-        <div className="fixed inset-0 bg-[#FFFBEB]/95 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
-          <div className="text-center space-y-4 animate-slide-up">
+        <div className="fixed inset-0 bg-[#FFFBEB]/95 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in overflow-hidden">
+          {/* Animated Background Elements */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {/* Floating gradient orbs */}
+            <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-[#84CC16]/40 to-[#FB923C]/40 rounded-full blur-3xl animate-float-slow" />
+            <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-br from-[#FB923C]/30 to-[#84CC16]/30 rounded-full blur-3xl animate-float-reverse" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-br from-[#84CC16]/20 to-[#FB923C]/20 rounded-full blur-3xl animate-float-slow" style={{ animationDelay: '5s' }} />
+            
+            {/* Subtle gradient background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#84CC16]/30 via-[#FB923C]/20 to-[#84CC16]/30 animate-gradient-drift" />
+          </div>
+          
+          {/* Content */}
+          <div className="relative text-center space-y-4 animate-slide-up z-10">
             <div className="text-6xl mb-4 animate-bounce">👨‍🍳</div>
             <h2 className="text-2xl font-bold text-[#1F2937]">Welcome to Recipe Matcher!</h2>
             <p className="text-[#6B7280] text-lg">Discover delicious recipes, add ingredients to your panty and let us do the rest!</p>
@@ -176,8 +188,20 @@ function App() {
 
       {/* Logout Overlay */}
       {isLoggingOut && (
-        <div className="fixed inset-0 bg-[#FFFBEB]/95 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
-          <div className="text-center space-y-4 animate-slide-up">
+        <div className="fixed inset-0 bg-[#FFFBEB]/95 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in overflow-hidden">
+          {/* Animated Background Elements */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {/* Floating gradient orbs */}
+            <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-[#84CC16]/40 to-[#FB923C]/40 rounded-full blur-3xl animate-float-slow" />
+            <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-br from-[#FB923C]/30 to-[#84CC16]/30 rounded-full blur-3xl animate-float-reverse" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-br from-[#84CC16]/20 to-[#FB923C]/20 rounded-full blur-3xl animate-float-slow" style={{ animationDelay: '5s' }} />
+            
+            {/* Subtle gradient background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#84CC16]/30 via-[#FB923C]/20 to-[#84CC16]/30 animate-gradient-drift" />
+          </div>
+          
+          {/* Content */}
+          <div className="relative text-center space-y-4 animate-slide-up z-10">
             <div className="text-6xl mb-4 animate-bounce">👋</div>
             <h2 className="text-2xl font-bold text-[#1F2937]">See you soon!</h2>
             <p className="text-[#6B7280] text-lg">Thanks for cooking with us today</p>
@@ -186,14 +210,25 @@ function App() {
       )}
 
       <div className={(isLoggingOut || showWelcome) ? 'opacity-0 transition-opacity duration-500' : 'opacity-100 transition-opacity duration-500'}>
-        <Header onLogout={handleLogout} isAuthenticated={isAuthenticated} />
-
-        <Tabs active={activeTab} onChange={setActiveTab} isAuthenticated={isAuthenticated} />
+        <Header onLogout={handleLogout} isAuthenticated={isAuthenticated} onNavigate={setActiveTab} />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* All Recipes / My Recipes */}
-        {(activeTab === 'all' || activeTab === 'mine') && (
+      <main className="relative min-h-screen overflow-hidden">
+        {/* Animated Background Elements - Applied to all pages */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          {/* Floating gradient orbs */}
+          <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-[#84CC16]/40 to-[#FB923C]/40 rounded-full blur-3xl animate-float-slow" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-br from-[#FB923C]/30 to-[#84CC16]/30 rounded-full blur-3xl animate-float-reverse" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-br from-[#84CC16]/20 to-[#FB923C]/20 rounded-full blur-3xl animate-float-slow" style={{ animationDelay: '5s' }} />
+          
+          {/* Subtle gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#84CC16]/30 via-[#FB923C]/20 to-[#84CC16]/30 animate-gradient-drift" />
+        </div>
+
+        {/* Content wrapper with relative positioning */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* All Recipes / My Recipes */}
+          {(activeTab === 'all' || activeTab === 'mine') && (
           <div>
             {/* Filters */}
             {isAuthenticated && (
@@ -278,8 +313,14 @@ function App() {
 
         {/* Login */}
         {activeTab === 'login' && !isAuthenticated && (
-          <LoginForm onSuccess={handleLoginSuccess} />
+          <div className="relative min-h-[60vh] flex items-center justify-center">
+            {/* Login Form */}
+            <div className="relative z-10 w-full">
+              <LoginForm onSuccess={handleLoginSuccess} />
+            </div>
+          </div>
         )}
+        </div>
       </main>
 
         {/* Toast Container */}

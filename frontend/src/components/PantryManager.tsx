@@ -78,7 +78,7 @@ export default function PantryManager() {
                 value={newIngredientName}
                 onChange={(e) => setNewIngredientName(e.target.value)}
                 placeholder="e.g. Chicken, Tomatoes, Cheese"
-                className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+                className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#84CC16]"
                 required
               />
             </div>
@@ -90,7 +90,7 @@ export default function PantryManager() {
                 step={0.1}
                 value={newIngredientQuantity}
                 onChange={(e) => setNewIngredientQuantity(parseFloat(e.target.value) || 1)}
-                className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+                className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#84CC16]"
               />
             </div>
             <div>
@@ -98,7 +98,7 @@ export default function PantryManager() {
               <select
                 value={newIngredientUnit}
                 onChange={(e) => setNewIngredientUnit(e.target.value)}
-                className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+                className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#84CC16]"
               >
                 <option value="piece">piece</option>
                 <option value="cup">cup</option>
@@ -116,7 +116,7 @@ export default function PantryManager() {
           <button
             type="submit"
             disabled={addPantryItem.isPending}
-            className="px-6 py-2 bg-[#F97316] text-white rounded hover:bg-[#EA580C] disabled:opacity-50 flex items-center gap-2"
+            className="bg-[#84CC16] hover:bg-[#65A30D] text-white px-6 py-3 rounded-xl font-medium text-sm transform transition-all duration-200 hover:scale-105 hover:shadow-lime-glow active:scale-95 disabled:opacity-50 flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             {addPantryItem.isPending ? 'Adding...' : 'Add to Pantry'}

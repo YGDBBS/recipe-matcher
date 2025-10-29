@@ -38,7 +38,7 @@ export default function LoginForm({ onSuccess }: Props) {
   };
 
   return (
-    <div className="bg-white border border-[#E5E7EB] rounded-lg p-6 max-w-md mx-auto">
+    <div className="bg-white/80 backdrop-blur-md border border-white/20 rounded-xl p-6 max-w-md mx-auto shadow-xl">
       <h2 className="text-2xl font-bold mb-4 text-[#1F2937]">{isRegister ? 'Register' : 'Login'}</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         {isRegister && (
@@ -48,7 +48,7 @@ export default function LoginForm({ onSuccess }: Props) {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+              className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#84CC16]"
               required
             />
           </div>
@@ -59,7 +59,7 @@ export default function LoginForm({ onSuccess }: Props) {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+              className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#84CC16]"
             required
           />
         </div>
@@ -69,7 +69,7 @@ export default function LoginForm({ onSuccess }: Props) {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+              className="w-full px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#84CC16]"
             required
           />
         </div>
@@ -77,7 +77,7 @@ export default function LoginForm({ onSuccess }: Props) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full px-4 py-2 bg-[#F97316] text-white rounded hover:bg-[#EA580C] disabled:opacity-50"
+          className="w-full bg-[#84CC16] hover:bg-[#65A30D] text-white px-6 py-3 rounded-xl font-medium text-sm transform transition-all duration-200 hover:scale-105 hover:shadow-lime-glow active:scale-95 disabled:opacity-50"
         >
           {loading ? 'Loading...' : isRegister ? 'Register' : 'Login'}
         </button>
@@ -87,7 +87,7 @@ export default function LoginForm({ onSuccess }: Props) {
             setIsRegister(!isRegister);
             setError('');
           }}
-          className="w-full text-sm text-[#6B7280] hover:text-[#F97316]"
+          className="w-full text-sm text-[#6B7280] hover:text-[#84CC16]"
         >
           {isRegister ? 'Already have an account? Login' : "Don't have an account? Register"}
         </button>

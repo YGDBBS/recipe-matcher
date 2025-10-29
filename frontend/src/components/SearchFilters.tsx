@@ -21,13 +21,13 @@ export default function SearchFilters({ search, setSearch, cuisine, setCuisine, 
             placeholder="Search by ingredient (e.g. chicken)"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+            className="w-full pl-10 pr-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-4 focus:ring-[#84CC16]/30 focus:border-[#84CC16] transition-all duration-200"
           />
         </div>
         <select
           value={cuisine}
           onChange={(e) => setCuisine(e.target.value)}
-          className="px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+          className="px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-4 focus:ring-[#84CC16]/30 focus:border-[#84CC16] transition-all duration-200"
         >
           <option value="">All cuisines</option>
           {cuisines.map((c) => (
@@ -38,7 +38,7 @@ export default function SearchFilters({ search, setSearch, cuisine, setCuisine, 
         </select>
         <button
           onClick={onReset}
-          className="px-4 py-2 bg-white border border-[#E5E7EB] text-[#6B7280] rounded hover:bg-[#FFF7ED]"
+          className="text-[#84CC16] hover:text-[#65A30D] hover:underline transition-all duration-200"
         >
           Reset
         </button>

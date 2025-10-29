@@ -13,11 +13,11 @@ export default function PantryQuickFilter({ pantryItems, selected, onToggle, onC
   }
 
   return (
-    <div className="bg-[#FFF7ED] border border-[#F97316]/20 rounded-lg p-4 mb-6">
+    <div className="bg-[#FFF7ED] border border-[#84CC16]/20 rounded-lg p-4 mb-6">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-[#F97316]">Your Pantry:</span>
-          <span className="text-xs text-[#F97316]">
+          <span className="text-sm font-semibold text-[#84CC16]">Your Pantry:</span>
+          <span className="text-xs text-[#84CC16]">
             {selected.length > 0 
               ? `${selected.length} selected - Finding recipes with all selected ingredients`
               : 'Click ingredients to find recipes, you can select multiple ingredients to find recipes with all of them'}
@@ -26,7 +26,7 @@ export default function PantryQuickFilter({ pantryItems, selected, onToggle, onC
         {selected.length > 0 && (
           <button
             onClick={onClear}
-            className="text-xs text-[#F97316] hover:text-[#EA580C] underline"
+            className="text-xs text-[#84CC16] hover:text-[#65A30D] underline"
           >
             Clear Selection
           </button>
@@ -39,11 +39,16 @@ export default function PantryQuickFilter({ pantryItems, selected, onToggle, onC
           return (
             <button
               key={item.ingredientId}
-              onClick={() => onToggle(normalizedName)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center gap-1 ${
+              onClick={() => {
+                // Add slight delay to trigger pulse animation
+                setTimeout(() => {
+                  onToggle(normalizedName);
+                }, 50);
+              }}
+              className={`rounded-full text-sm flex items-center gap-1 ${
                 isSelected
-                  ? 'bg-[#F97316] text-white shadow-sm'
-                  : 'bg-white text-[#F97316] border border-[#E5E7EB] hover:bg-[#FFF7ED]'
+                  ? 'bg-[#84CC16] text-white px-3 py-1 shadow-md animate-pulseOnce ring-2 ring-[#84CC16] ring-offset-2 font-medium'
+                  : 'bg-white border border-gray-300 text-[#84CC16] px-3 py-1 hover:border-[#84CC16] hover:bg-[#84CC16]/10 hover:scale-105 transition-all duration-200'
               }`}
               title={
                 isSelected 

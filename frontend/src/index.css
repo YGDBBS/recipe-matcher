@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --primary: #84CC16;
+  --accent: #FB923C;
+  --bg: #FFFBEB;
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -22,10 +28,93 @@
   }
 }
 
+@keyframes float-slow {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
+@keyframes float-reverse {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-40px, 40px) scale(0.8);
+  }
+  66% {
+    transform: translate(25px, -25px) scale(1.2);
+  }
+}
+
+@keyframes gradient-drift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 0.4s ease-out;
 }
 
 .animate-slide-up {
   animation: slide-up 0.5s ease-out;
+}
+
+.animate-float-slow {
+  animation: float-slow 20s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+  animation: float-reverse 25s ease-in-out infinite;
+}
+
+.animate-gradient-drift {
+  animation: gradient-drift 15s ease infinite;
+  background-size: 200% 200%;
+}
+
+* {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Pitch-style underline animation for nav links */
+@keyframes underline {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+.underline-animation {
+  position: relative;
+}
+
+.underline-animation::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #84CC16; /* lime-400 */
+  transition: width 0.3s ease;
+}
+
+.underline-animation:hover::after {
+  width: 100%;
+}
+
+/* Lime glow utility for buttons */
+.shadow-lime-glow {
+  box-shadow: 0 8px 20px rgba(132, 204, 22, 0.30), 0 0 0 2px rgba(132, 204, 22, 0.10) inset;
 }

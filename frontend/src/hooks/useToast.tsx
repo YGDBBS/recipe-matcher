@@ -8,22 +8,22 @@ interface Toast {
 
 function ToastContainer({ toasts, removeToast }: { toasts: Toast[]; removeToast: (id: string) => void }) {
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2">
+    <div className="fixed top-4 right-4 z-50 animate-slideIn">
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 border ${
+          className={`border rounded-xl shadow-xl p-4 mb-3 flex items-center justify-between backdrop-blur-sm ${
             toast.type === 'error' 
-              ? 'bg-red-50 text-red-800 border-red-200' 
+              ? 'bg-red-50 border-red-200 text-red-800' 
               : toast.type === 'success' 
-              ? 'bg-[#FFF7ED] text-[#F97316] border-[#F97316]/20' 
-              : 'bg-[#FEF3C7] text-[#F97316] border-[#FACC15]/30'
+              ? 'bg-[#FB923C]/5 border-[#FB923C]/20 text-[#84CC16]' 
+              : 'bg-white/90 border-gray-200 text-[#84CC16]'
           }`}
         >
           <span>{toast.message}</span>
           <button 
             onClick={() => removeToast(toast.id)} 
-            className="ml-2 font-bold hover:text-[#F97316]"
+            className="ml-2 font-bold hover:text-[#84CC16] transition-colors"
           >
             ×
           </button>
