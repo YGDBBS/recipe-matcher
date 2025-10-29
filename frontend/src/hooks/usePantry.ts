@@ -19,9 +19,9 @@ export function usePantry(token: string | null, enabled: boolean = true) {
 export function useAddPantryItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ name, quantity, unit, token }: { name: string; quantity?: number; unit?: string; token: string }) =>
+    mutationFn: ({ name, quantity, unit, category, token }: { name: string; quantity?: number; unit?: string; category?: string; token: string }) =>
       api.addUserIngredient(
-        { name, quantity: quantity ?? 1, unit: unit ?? 'piece' },
+        { name, quantity: quantity ?? 1, unit: unit ?? 'piece', category: category ?? 'other' },
         token
       ),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pantry'] }),

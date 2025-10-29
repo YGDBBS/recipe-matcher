@@ -118,3 +118,10 @@
 .shadow-lime-glow {
   box-shadow: 0 8px 20px rgba(132, 204, 22, 0.30), 0 0 0 2px rgba(132, 204, 22, 0.10) inset;
 }
+
+/* Intersection observer animation for info cards */
+[data-in-view] {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  transition: all 0.6s ease-out;
+}

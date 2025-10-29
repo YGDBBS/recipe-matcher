@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-type Tab = 'all' | 'mine' | 'create' | 'pantry' | 'login';
+type Tab = 'home' | 'all' | 'mine' | 'create' | 'pantry' | 'login';
 import { CookingPot, Menu, X, User, LogOut } from 'lucide-react';
 
 interface HeaderProps {
@@ -13,6 +13,7 @@ const navLinks = [
   { label: 'All Recipes', href: '#' },
   { label: 'My Recipes', href: '#' },
   { label: 'Create Recipe', href: '#' },
+  { label: 'Shopping List', href: '#' },
   { label: 'Pantry', href: '#' },
   { label: 'Community', href: '#' },
   { label: 'Contact', href: '#' },
@@ -22,13 +23,13 @@ export default function Header({ onLogout, isAuthenticated, onNavigate }: Header
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-100">
+    <header className="fixed top-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="h-16 flex items-center justify-between">
           {/* Left: Logo */}
-          <a href="#" className="flex items-center gap-2 group">
+          <a href="#" className="flex items-center gap-2 group" onClick={(e) => { e.preventDefault(); onNavigate?.('home'); }}>
             <CookingPot className="w-6 h-6 text-black" />
-            <span className="font-bold text-gray-900 group-hover:text-lime-600 transition-colors">Recipe Matcher</span>
+            <span className="font-bold text-gray-900 group-hover:text-lime-600 transition-colors">Pantry Dropper</span>
           </a>
 
           {/* Center: Desktop Nav */}

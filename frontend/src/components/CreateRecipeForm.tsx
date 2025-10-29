@@ -161,8 +161,7 @@ export default function CreateRecipeForm({ onSuccess }: CreateRecipeFormProps) {
                   }}
                   className="col-span-3 px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#84CC16]"
                 />
-                <input
-                  placeholder="Unit"
+                <select
                   value={ing.unit}
                   onChange={(e) => {
                     const newIngredients = [...ingredients];
@@ -170,7 +169,19 @@ export default function CreateRecipeForm({ onSuccess }: CreateRecipeFormProps) {
                     setIngredients(newIngredients);
                   }}
                   className="col-span-3 px-3 py-2 border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#84CC16]"
-                />
+                >
+                  <option value="">Unit</option>
+                  <option value="piece">piece</option>
+                  <option value="cup">cup</option>
+                  <option value="tbsp">tbsp</option>
+                  <option value="tsp">tsp</option>
+                  <option value="oz">oz</option>
+                  <option value="lb">lb</option>
+                  <option value="g">g</option>
+                  <option value="kg">kg</option>
+                  <option value="ml">ml</option>
+                  <option value="l">l</option>
+                </select>
                 <button
                   type="button"
                   onClick={() => setIngredients(ingredients.filter((_, i) => i !== idx))}

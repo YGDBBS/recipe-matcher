@@ -49,6 +49,7 @@ export interface UserIngredient {
   name: string;
   quantity: number;
   unit: string;
+  category?: string;
   expiryDate?: string;
   addedAt: string;
 }

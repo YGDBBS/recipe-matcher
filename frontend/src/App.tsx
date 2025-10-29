@@ -1,35 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
-import SearchFilters from '@/components/SearchFilters';
-import PantryQuickFilter from '@/components/PantryQuickFilter';
 import RecipeGrid from '@/components/RecipeGrid';
 import CreateRecipeForm from '@/components/CreateRecipeForm';
 import PantryManager from '@/components/PantryManager';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
-import { useAllRecipes, useMyRecipes } from '@/hooks/useRecipes';
+import { useMyRecipes } from '@/hooks/useRecipes';
 import { usePantry } from '@/hooks/usePantry';
 import LoginForm from './components/LoginForm';
+import AllRecipes from '@/components/AllRecipes';
+import HomePage from '@/components/HomePage';
 
 
 
-type Tab = 'all' | 'mine' | 'create' | 'pantry' | 'login';
+type Tab = 'home' | 'all' | 'mine' | 'create' | 'pantry' | 'login';
 
 function App() {
   const { showToast, ToastContainer } = useToast();
   const { token, login, logout, isAuthenticated, isLoading: authLoading } = useAuth({ showToast });
-  const [activeTab, setActiveTab] = useState<Tab>(isAuthenticated ? 'all' : 'login');
+  const [activeTab, setActiveTab] = useState<Tab>(isAuthenticated ? 'home' : 'login');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
 
-  // Recipe list state
-  const [search, setSearch] = useState('');
-  const [cuisine, setCuisine] = useState('');
-
-  // Pantry state
-  const [selectedPantryIngredients, setSelectedPantryIngredients] = useState<string[]>([]);
-
-  // Pantry hooks (for PantryQuickFilter)
+  // Pantry for My Recipes matching
   const pantryQuery = usePantry(token, isAuthenticated);
   const pantryItems = pantryQuery.data || [];
 
@@ -46,49 +39,31 @@ function App() {
     [logout, showToast]
   );
 
-  // Determine which recipe hook to use based on active tab
-  const hasManualSearch = search && !selectedPantryIngredients.length;
-  const hasPantrySelection = selectedPantryIngredients.length > 0;
-  
-  // For "all" tab: use pantry ingredients if selected, otherwise use manual search
-  // Only enable query if authenticated and there are filters
-  const allRecipesParams = {
-    ingredient: hasManualSearch ? search : undefined,
-    cuisine: cuisine || undefined,
-    pantryIngredients: hasPantrySelection && !hasManualSearch && isAuthenticated ? selectedPantryIngredients : undefined,
-    pantryItems: isAuthenticated && pantryItems.length > 0 ? pantryItems : undefined, // Include full pantry items for match calculation
-    token: token || undefined,
-    enabled: activeTab === 'all' && isAuthenticated && (hasManualSearch || (hasPantrySelection && isAuthenticated) || !!cuisine),
-  };
-  
-  const allRecipesQuery = useAllRecipes(allRecipesParams);
   const myRecipesQuery = useMyRecipes(
     token,
     activeTab === 'mine',
     isAuthenticated && pantryItems.length > 0 ? pantryItems : undefined
   );
 
-  // Determine which query result to use
-  const recipesQuery = activeTab === 'mine' ? myRecipesQuery : allRecipesQuery;
-  const recipes = recipesQuery.data || [];
-  const loading = recipesQuery.isLoading;
+  const myRecipes = myRecipesQuery.data || [];
+  const myLoading = myRecipesQuery.isLoading;
 
   // Handle errors from React Query
   useEffect(() => {
-    if (recipesQuery.error) {
-      const errorMessage = recipesQuery.error instanceof Error ? recipesQuery.error.message : String(recipesQuery.error);
+    if (myRecipesQuery.error) {
+      const errorMessage = myRecipesQuery.error instanceof Error ? myRecipesQuery.error.message : String(myRecipesQuery.error);
       // Don't show error for "Please provide" messages (these are handled gracefully by returning empty array)
       if (!errorMessage.includes('Please provide')) {
         handleApiError(errorMessage);
       }
     }
-  }, [recipesQuery.error, handleApiError]);
+  }, [myRecipesQuery.error, handleApiError]);
 
   // Handle login success
   const handleLoginSuccess = useCallback(
     (newToken: string) => {
       login(newToken);
-      setActiveTab('mine');
+      setActiveTab('home');
       showToast('Login successful!', 'success');
       // Pantry will auto-fetch via usePantry hook
     },
@@ -106,10 +81,7 @@ function App() {
     setTimeout(() => {
       logout();
       setActiveTab('login');
-      // Clear all search/filter state
-      setSearch('');
-      setCuisine('');
-      setSelectedPantryIngredients([]);
+      // All-recipes state is managed within its component
       setIsLoggingOut(false);
       // Pantry query will automatically return empty array when token is null
     }, 2800); // 2.8 seconds delay to show the friendly message
@@ -144,12 +116,7 @@ function App() {
     if (!isAuthenticated && activeTab !== 'all' && activeTab !== 'login') {
       setActiveTab('login');
     }
-    // When logging out, clear search state
-    if (!isAuthenticated) {
-      setSearch('');
-      setCuisine('');
-      setSelectedPantryIngredients([]);
-    }
+    // All-recipes state is managed within its component
   }, [isAuthenticated, activeTab]);
 
 
@@ -213,7 +180,7 @@ function App() {
         <Header onLogout={handleLogout} isAuthenticated={isAuthenticated} onNavigate={setActiveTab} />
 
       {/* Main Content */}
-      <main className="relative min-h-screen overflow-hidden">
+      <main className="relative min-h-screen overflow-hidden pt-16">
         {/* Animated Background Elements - Applied to all pages */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
           {/* Floating gradient orbs */}
@@ -227,79 +194,29 @@ function App() {
 
         {/* Content wrapper with relative positioning */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* All Recipes / My Recipes */}
-          {(activeTab === 'all' || activeTab === 'mine') && (
-          <div>
-            {/* Filters */}
-            {isAuthenticated && (
-              <SearchFilters
-                search={search}
-                setSearch={(value) => {
-                  setSearch(value);
-                  // Clear pantry selection when using manual search
-                  if (value) {
-                    setSelectedPantryIngredients([]);
-                  }
-                }}
-                cuisine={cuisine}
-                setCuisine={setCuisine}
-                onReset={() => {
-                  setSearch('');
-                  setCuisine('');
-                  setSelectedPantryIngredients([]);
-                }}
-              />
-            )}
+          {/* Home */}
+          {activeTab === 'home' && isAuthenticated && (
+            <HomePage />
+          )}
 
-            {/* Pantry Ingredients - Quick Filters */}
-            {activeTab === 'all' && isAuthenticated && (
-              <PantryQuickFilter
-                pantryItems={pantryItems}
-                selected={selectedPantryIngredients}
-                onToggle={(normalizedName: string) => {
-                  if (selectedPantryIngredients.includes(normalizedName)) {
-                    // Remove from selection
-                    setSelectedPantryIngredients(prev => 
-                      prev.filter(name => name !== normalizedName)
-                    );
-                  } else {
-                    // Add to selection
-                    setSelectedPantryIngredients(prev => [...prev, normalizedName]);
-                  }
-                  // Clear manual search when using pantry selection
-                  setSearch('');
-                }}
-                onClear={() => {
-                  setSelectedPantryIngredients([]);
-                  setSearch('');
-                }}
-              />
-            )}
+          {/* All Recipes */}
+          {activeTab === 'all' && (
+            <AllRecipes
+              isAuthenticated={isAuthenticated}
+              token={token}
+              onLoginSuccess={handleLoginSuccess}
+              onApiError={handleApiError}
+            />
+          )}
 
-            {/* Only show RecipeGrid when authenticated or when filters are applied */}
-            {(isAuthenticated || search || cuisine || selectedPantryIngredients.length > 0) && (
-              <RecipeGrid
-                recipes={recipes}
-                isLoading={loading}
-                emptyMessage={
-                  activeTab === 'mine' ? (
-                    'You have no recipes yet. Create one!'
-                  ) : activeTab === 'all' && !search && !selectedPantryIngredients.length && !cuisine ? (
-                    'Enter an ingredient, select pantry ingredients, or choose a cuisine to search for recipes.'
-                  ) : (
-                    'No recipes found. Try different filters.'
-                  )
-                }
-              />
-            )}
-
-            {!isAuthenticated && activeTab === 'all' && (
-              <div className="mt-8">
-                <LoginForm onSuccess={handleLoginSuccess} />
-              </div>
-            )}
-          </div>
-        )}
+          {/* My Recipes */}
+          {activeTab === 'mine' && isAuthenticated && (
+            <RecipeGrid
+              recipes={myRecipes}
+              isLoading={myLoading}
+              emptyMessage={'You have no recipes yet. Create one!'}
+            />
+          )}
 
         {/* Create Recipe */}
         {activeTab === 'create' && isAuthenticated && (
