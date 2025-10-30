@@ -49,7 +49,7 @@ export interface UserIngredient {
   name: string;
   quantity: number;
   unit: string;
-  category?: string;
+  category?: 'fridge' | 'freezer' | 'dry' | 'pantry' | 'spices' | 'other' | 'fruit' | 'vegetables' | string;
   expiryDate?: string;
   addedAt: string;
 }

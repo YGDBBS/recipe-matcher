@@ -24,7 +24,40 @@ export function useAddPantryItem() {
         { name, quantity: quantity ?? 1, unit: unit ?? 'piece', category: category ?? 'other' },
         token
       ),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pantry'] }),
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: ['pantry'] });
+      const previous = queryClient.getQueryData<UserIngredient[]>(['pantry']);
+
+      const tempId = `temp-${Date.now()}`;
+      const optimisticItem: UserIngredient = {
+        userId: 'self',
+        ingredientId: tempId,
+        name: variables.name.toLowerCase(),
+        quantity: variables.quantity ?? 1,
+        unit: variables.unit ?? 'piece',
+        category: (variables.category || 'other').toLowerCase(),
+        addedAt: new Date().toISOString(),
+      } as UserIngredient;
+
+      queryClient.setQueryData<UserIngredient[]>(['pantry'], (old) => {
+        const current = Array.isArray(old) ? old : [];
+        return [...current, optimisticItem];
+      });
+
+      return { previous, tempId };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData(['pantry'], ctx.previous);
+      }
+    },
+    onSuccess: () => {
+      // Backend now returns category; trust server and refetch
+      queryClient.invalidateQueries({ queryKey: ['pantry'] });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['pantry'] });
+    },
   });
 }
 

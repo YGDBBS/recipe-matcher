@@ -82,10 +82,6 @@ export default function AllRecipes({ isAuthenticated, token, onLoginSuccess, onA
           }
           setSearch('');
         }}
-        onClear={() => {
-          setSelectedPantryIngredients([]);
-          setSearch('');
-        }}
       />
 
       <RecipeGrid

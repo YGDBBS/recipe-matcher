@@ -4,10 +4,9 @@ interface PantryQuickFilterProps {
   pantryItems: UserIngredient[];
   selected: string[];
   onToggle: (name: string) => void;
-  onClear: () => void;
 }
 
-export default function PantryQuickFilter({ pantryItems, selected, onToggle, onClear }: PantryQuickFilterProps) {
+export default function PantryQuickFilter({ pantryItems, selected, onToggle }: PantryQuickFilterProps) {
   if (pantryItems.length === 0) {
     return null;
   }
@@ -23,14 +22,7 @@ export default function PantryQuickFilter({ pantryItems, selected, onToggle, onC
               : 'Click ingredients to find recipes, you can select multiple ingredients to find recipes with all of them'}
           </span>
         </div>
-        {selected.length > 0 && (
-          <button
-            onClick={onClear}
-            className="text-xs text-[#84CC16] hover:text-[#65A30D] underline"
-          >
-            Clear Selection
-          </button>
-        )}
+        {/* Clear Selection removed per request */}
       </div>
       <div className="flex flex-wrap gap-2">
         {pantryItems.map((item) => {
@@ -60,7 +52,7 @@ export default function PantryQuickFilter({ pantryItems, selected, onToggle, onC
                 <span className="text-xs">✓</span>
               )}
               {item.name}
-              {item.quantity > 0 && (
+              {item.quantity > 0 && item.unit?.toLowerCase() !== 'piece' && (
                 <span className={`ml-1 text-xs ${isSelected ? 'opacity-90' : 'opacity-75'}`}>
                   ({item.quantity} {item.unit})
                 </span>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 type Tab = 'home' | 'all' | 'mine' | 'create' | 'pantry' | 'login';
-import { CookingPot, Menu, X, User, LogOut } from 'lucide-react';
+import { CookingPot, Menu, User, LogOut } from 'lucide-react';
 
 interface HeaderProps {
   onLogout: () => void;
@@ -128,8 +128,9 @@ export default function Header({ onLogout, isAuthenticated, onNavigate }: Header
               aria-label="Close Menu"
               className="inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:text-lime-600"
               onClick={() => setMobileOpen(false)}
+              title="Close"
             >
-              <X className="w-6 h-6" />
+              🗑️
             </button>
           </div>
 
