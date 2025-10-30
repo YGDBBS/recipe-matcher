@@ -16,6 +16,7 @@ interface UserIngredient {
   name: string;
   quantity: number;
   unit: string;
+  category?: string;
   expiryDate?: string;
   addedAt: string;
 }
@@ -66,7 +67,10 @@ async function getUserIngredients(userId?: string, queryParams?: any): Promise<A
       },
     }));
 
-    const userIngredients = result.Item?.ingredients || [];
+    const userIngredients = (result.Item?.ingredients || []).map((ing: any) => ({
+      ...ing,
+      category: ing.category ? String(ing.category).toLowerCase() : undefined,
+    }));
     return createSuccessResponse({ userIngredients });
   } catch (error) {
     return errorResponseFromError(error);
@@ -87,6 +91,7 @@ async function addUserIngredient(ingredientData: any, userId?: string): Promise<
       name: ingredientData.name.toLowerCase(),
       quantity: ingredientData.quantity || 1,
       unit: ingredientData.unit || 'piece',
+      category: ingredientData.category ? String(ingredientData.category).toLowerCase() : undefined,
       expiryDate: ingredientData.expiryDate || undefined,
       addedAt: now,
     };
