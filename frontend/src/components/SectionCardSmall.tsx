@@ -70,8 +70,8 @@ export default function SectionCardSmall({ title, category, items, onRemove, onA
         />
         <input
           type="number"
-          min={0.1}
-          step={0.1}
+          min={1}
+          step={1}
           value={quantity}
           onChange={(e) => setQuantity(parseFloat(e.target.value) || 1)}
           className="px-3 py-1.5 text-sm border border-[#E5E7EB] rounded focus:outline-none focus:ring-2 focus:ring-[#84CC16]"

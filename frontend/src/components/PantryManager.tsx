@@ -51,13 +51,15 @@ export default function PantryManager() {
       {/* Hero Section */}
       <section className="max-w-3xl mx-auto text-center pt-20 pb-8 px-4 animate-fade-in">
         <h1 className="text-5xl font-bold text-[#1F2937]">Pantry</h1>
+        <p className="mt-3 text-xl text-[#6B7280]">
+          Add all your ingredients here, and we'll do the rest. Head over to All Recipes and find your next meal!
+        </p>
       </section>
 
       {/* Removed top Add form per refactor */}
 
       {/* Pantry Items Display */}
       <section className="max-w-6xl mx-auto px-4 mt-12">
-        <h2 className="text-3xl font-bold text-[#1F2937] text-center mb-8">My Pantry ({pantryItems.length})</h2>
         {loadingPantry ? (
           <div className="text-center py-12 text-[#6B7280]">Loading pantry...</div>
         ) : (
